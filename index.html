@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0077B6">
+<script>
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    const isApp = params.get('app') === '1';
+    const isRootPage = window.location.pathname === '/' || window.location.pathname.endsWith('/index.html');
+    if (isRootPage && !isApp) {
+      window.location.replace('landing.html');
+    }
+  })();
+</script>
 <title>DentaAgenda</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
