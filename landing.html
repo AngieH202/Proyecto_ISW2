@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0077B6">
+<title>DentaAgenda — Agendá tu cita dental en minutos</title>
+<meta name="description" content="DentaAgenda es la plataforma que conecta a los pacientes con su consultorio dental: solicitá tu cita, seguí su estado y consultá tu historial desde el celular.">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --azul:#0077B6;
+  --celeste:#00B4D8;
+  --marino:#03045E;
+  --azul-oscuro:#023E8A;
+  --fondo:#EAF4FB;
+  --borde:#cae5f5;
+  --texto:#33506b;
+}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:var(--marino);line-height:1.6;-webkit-font-smoothing:antialiased}
+img,svg{max-width:100%}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+/* ---------- Navbar ---------- */
+.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--borde)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:66px;gap:16px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;letter-spacing:.3px;color:var(--marino)}
+.logo svg{width:28px;height:28px;fill:var(--azul);flex-shrink:0}
+.nav-links{display:flex;align-items:center;gap:28px}
+.nav-links a{font-size:14px;font-weight:500;color:var(--texto);transition:color .2s}
+.nav-links a:hover{color:var(--azul)}
+.btn{display:inline-block;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:transform .15s,box-shadow .2s,opacity .2s;font-family:inherit}
+.btn-primary{padding:13px 26px;background:linear-gradient(135deg,var(--azul),var(--celeste));color:#fff;box-shadow:0 6px 18px rgba(0,119,182,.28)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,119,182,.34)}
+.btn-ghost{padding:12px 24px;background:#fff;color:var(--azul);border:1.5px solid var(--borde)}
+.btn-ghost:hover{border-color:var(--azul)}
+.btn-sm{padding:9px 18px;font-size:14px}
+
+/* ---------- Hero ---------- */
+.hero{background:linear-gradient(160deg,#0077B6 0%,#00B4D8 55%,#EAF4FB 100%);padding:76px 0 96px;color:#fff;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;width:520px;height:520px;border-radius:50%;background:rgba(255,255,255,.08);top:-180px;right:-140px}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;position:relative;z-index:1}
+.pill{display:inline-block;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:999px;letter-spacing:.4px;margin-bottom:20px}
+.hero h1{font-size:clamp(32px,4.6vw,50px);line-height:1.15;font-weight:700;letter-spacing:-.5px;margin-bottom:18px}
+.hero p.lead{font-size:17.5px;color:rgba(255,255,255,.92);max-width:520px;margin-bottom:30px}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:34px}
+.hero .btn-primary{background:#fff;color:var(--azul);box-shadow:0 8px 24px rgba(2,62,138,.25)}
+.hero .btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.6)}
+.hero .btn-ghost:hover{border-color:#fff;background:rgba(255,255,255,.12)}
+.hero-stats{display:flex;gap:34px;flex-wrap:wrap}
+.hero-stats b{display:block;font-size:24px;font-weight:700}
+.hero-stats span{font-size:13px;color:rgba(255,255,255,.85)}
+
+/* ---------- Mockup ---------- */
+.phone{width:270px;margin:0 auto;background:#fff;border-radius:30px;padding:12px;box-shadow:0 26px 60px rgba(2,62,138,.32)}
+.phone-screen{background:var(--fondo);border-radius:20px;overflow:hidden}
+.phone-top{background:linear-gradient(135deg,var(--azul),var(--celeste));padding:14px 16px;display:flex;align-items:center;gap:8px}
+.phone-top svg{width:18px;height:18px;fill:#fff}
+.phone-top span{color:#fff;font-size:14px;font-weight:600}
+.phone-body{padding:14px}
+.card-mini{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,119,182,.08)}
+.card-mini .t{font-size:13px;font-weight:600;color:var(--azul-oscuro)}
+.card-mini .s{font-size:11.5px;color:var(--texto)}
+.chip{display:inline-block;font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:999px;margin-top:6px}
+.chip.ok{background:#dff5e6;color:#1c7a45}
+.chip.wait{background:#fff2d6;color:#9a6b00}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px}
+.slot{background:#fff;border:1.5px solid var(--borde);border-radius:9px;text-align:center;font-size:11px;padding:7px 0;color:var(--azul)}
+.slot.sel{background:linear-gradient(135deg,var(--azul),var(--celeste));border-color:transparent;color:#fff}
+
+/* ---------- Secciones ---------- */
+section{padding:84px 0}
+.section-head{text-align:center;max-width:640px;margin:0 auto 52px}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--celeste);margin-bottom:12px}
+.section-head h2{font-size:clamp(26px,3.2vw,36px);line-height:1.25;letter-spacing:-.4px;margin-bottom:14px}
+.section-head p{color:var(--texto);font-size:16.5px}
+
+.features{background:var(--fondo)}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.feature{background:#fff;border-radius:18px;padding:28px 24px;border:1px solid var(--borde);transition:transform .2s,box-shadow .2s}
+.feature:hover{transform:translateY(-4px);box-shadow:0 14px 32px rgba(0,119,182,.12)}
+.feature .ico{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,var(--azul),var(--celeste));display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.feature .ico svg{width:23px;height:23px;fill:#fff}
+.feature h3{font-size:17px;margin-bottom:8px}
+.feature p{font-size:14.5px;color:var(--texto)}
+
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;counter-reset:paso}
+.step{position:relative;padding-top:14px}
+.step::before{counter-increment:paso;content:counter(paso);display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;background:var(--marino);color:#fff;font-weight:700;font-size:17px;margin-bottom:16px}
+.step h3{font-size:17px;margin-bottom:8px}
+.step p{font-size:14.5px;color:var(--texto)}
+
+.roles{background:var(--fondo)}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+.role{background:#fff;border-radius:20px;padding:34px 30px;border:1px solid var(--borde)}
+.role h3{font-size:20px;margin-bottom:6px}
+.role .sub{font-size:14px;color:var(--celeste);font-weight:600;margin-bottom:18px}
+.role ul{list-style:none;display:flex;flex-direction:column;gap:11px}
+.role li{position:relative;padding-left:28px;font-size:15px;color:var(--texto)}
+.role li::before{content:"";position:absolute;left:0;top:7px;width:16px;height:16px;border-radius:50%;background:rgba(0,180,216,.16);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230077B6'%3E%3Cpath d='M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E");
+  background-size:11px;background-repeat:no-repeat;background-position:center}
+
+.cta{background:linear-gradient(135deg,var(--azul-oscuro),var(--azul) 55%,var(--celeste));color:#fff;text-align:center}
+.cta h2{font-size:clamp(26px,3.4vw,38px);margin-bottom:14px;letter-spacing:-.4px}
+.cta p{font-size:17px;color:rgba(255,255,255,.9);max-width:520px;margin:0 auto 30px}
+.cta .btn-primary{background:#fff;color:var(--azul)}
+
+footer{background:var(--marino);color:rgba(255,255,255,.72);padding:44px 0;font-size:14px}
+.foot-inner{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+footer .logo{color:#fff}
+footer .logo svg{fill:var(--celeste)}
+.foot-links{display:flex;gap:22px}
+.foot-links a:hover{color:#fff}
+
+@media(max-width:900px){
+  .hero-grid{grid-template-columns:1fr;gap:44px;text-align:center}
+  .hero p.lead{margin-left:auto;margin-right:auto}
+  .hero-actions,.hero-stats{justify-content:center}
+  .grid-3,.steps,.grid-2{grid-template-columns:1fr}
+  .nav-links a:not(.btn){display:none}
+  section{padding:64px 0}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a href="#" class="logo">
+      <svg viewBox="0 0 24 24"><path d="M12 5.5c-1.2-1-2.6-1.5-4-1.5C5.2 4 3 6.2 3 9c0 3.5 2 6.5 3.5 9 .6 1 1.3 2 2.2 2 .9 0 1.3-.7 1.6-1.9l.7-2.6c.1-.4.4-.6.8-.6s.7.2.8.6l.7 2.6c.3 1.2.7 1.9 1.6 1.9.9 0 1.6-1 2.2-2C19.5 15.5 21 12.5 21 9c0-2.8-2.2-5-5-5-1.4 0-2.8.5-4 1.5z"/></svg>
+      DentaAgenda
+    </a>
+    <div class="nav-links">
+      <a href="#funciones">Funciones</a>
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#para-quien">Para quién</a>
+      <a class="btn btn-primary btn-sm" href="index.html">Entrar a la app</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="pill">Consultorio odontológico</span>
+      <h1>Tu próxima cita dental, a un par de toques</h1>
+      <p class="lead">DentaAgenda conecta a pacientes y consultorio en un solo lugar: solicitá tu turno, seguí el estado de tu cita en tiempo real y consultá tu historial de visitas sin llamadas ni esperas.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="index.html">Solicitar una cita</a>
+        <a class="btn btn-ghost" href="#como-funciona">Ver cómo funciona</a>
+      </div>
+      <div class="hero-stats">
+        <div><b>24/7</b><span>Solicitudes en línea</span></div>
+        <div><b>2</b><span>Perfiles: paciente y doctora</span></div>
+        <div><b>0</b><span>Llamadas necesarias</span></div>
+      </div>
+    </div>
+
+    <div class="phone" aria-hidden="true">
+      <div class="phone-screen">
+        <div class="phone-top">
+          <svg viewBox="0 0 24 24"><path d="M12 5.5c-1.2-1-2.6-1.5-4-1.5C5.2 4 3 6.2 3 9c0 3.5 2 6.5 3.5 9 .6 1 1.3 2 2.2 2 .9 0 1.3-.7 1.6-1.9l.7-2.6c.1-.4.4-.6.8-.6s.7.2.8.6l.7 2.6c.3 1.2.7 1.9 1.6 1.9.9 0 1.6-1 2.2-2C19.5 15.5 21 12.5 21 9c0-2.8-2.2-5-5-5-1.4 0-2.8.5-4 1.5z"/></svg>
+          <span>DentaAgenda</span>
+        </div>
+        <div class="phone-body">
+          <div class="card-mini">
+            <div class="t">Estado de tu cita</div>
+            <div class="s">Limpieza dental · Lun 14, 10:00 a.m.</div>
+            <span class="chip ok">Confirmada</span>
+          </div>
+          <div class="card-mini">
+            <div class="t">Solicitud enviada</div>
+            <div class="s">Control de ortodoncia · Jue 17</div>
+            <span class="chip wait">Pendiente</span>
+          </div>
+          <div class="card-mini">
+            <div class="t" style="margin-bottom:8px">Horas disponibles</div>
+            <div class="slots">
+              <div class="slot">09:00</div>
+              <div class="slot sel">10:00</div>
+              <div class="slot">11:30</div>
+              <div class="slot">14:00</div>
+              <div class="slot">15:30</div>
+              <div class="slot">16:00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="funciones" class="features">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Funciones</div>
+      <h2>Todo lo que el consultorio necesita, ordenado</h2>
+      <p>Desde la solicitud del paciente hasta el expediente clínico, cada paso del proceso queda registrado y visible para quien corresponde.</p>
+    </div>
+    <div class="grid-3">
+      <article class="feature">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 18H5V9h14v12z"/></svg></div>
+        <h3>Solicitud de citas en línea</h3>
+        <p>El paciente elige el día, ve las horas realmente disponibles y describe su motivo de consulta desde el celular.</p>
+      </article>
+      <article class="feature">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+        <h3>Confirmación de la doctora</h3>
+        <p>Las solicitudes llegan a una bandeja de pendientes donde se confirman o reprograman en un toque.</p>
+      </article>
+      <article class="feature">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 10.6V6h-2v7.4l5.2 3.1 1-1.7-4.2-2.2z"/></svg></div>
+        <h3>Estado de la cita en vivo</h3>
+        <p>Pendiente, confirmada o reprogramada: el paciente sabe siempre en qué punto está su turno.</p>
+      </article>
+      <article class="feature">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
+        <h3>Expediente del paciente</h3>
+        <p>Datos personales, alergias y notas clínicas centralizados y disponibles durante la consulta.</p>
+      </article>
+      <article class="feature">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.9 3.9.1.2L9 12H6a7 7 0 1 1 2.1 5l-1.4 1.4A9 9 0 1 0 13 3zm-1 5v5l4.3 2.5.7-1.2-3.5-2.1V8H12z"/></svg></div>
+        <h3>Historial de visitas</h3>
+        <p>Cada consulta pasada queda registrada con fecha, tratamiento y observaciones para dar seguimiento.</p>
+      </article>
+      <article class="feature">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg></div>
+        <h3>Búsqueda de pacientes</h3>
+        <p>La doctora encuentra a cualquier paciente por nombre y abre su expediente completo al instante.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="como-funciona">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Cómo funciona</div>
+      <h2>Tres pasos, de la solicitud a la consulta</h2>
+      <p>Sin llamadas, sin agendas en papel y sin turnos duplicados.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <h3>Elegí día y hora</h3>
+        <p>Ingresás como paciente, seleccionás una fecha y una de las horas disponibles del consultorio.</p>
+      </div>
+      <div class="step">
+        <h3>Contá tu motivo</h3>
+        <p>Completás tus datos y describís brevemente la consulta para que la doctora llegue preparada.</p>
+      </div>
+      <div class="step">
+        <h3>Recibí la confirmación</h3>
+        <p>La doctora revisa la solicitud y la confirma; vos seguís el estado desde la misma pantalla.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="para-quien" class="roles">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Para quién</div>
+      <h2>Una app, dos formas de usarla</h2>
+      <p>Cada perfil ve exactamente lo que necesita para su rol.</p>
+    </div>
+    <div class="grid-2">
+      <div class="role">
+        <h3>Pacientes</h3>
+        <div class="sub">Autonomía y claridad</div>
+        <ul>
+          <li>Solicitar una cita en cualquier momento del día</li>
+          <li>Ver las horas realmente libres antes de elegir</li>
+          <li>Consultar el estado de la cita sin llamar</li>
+          <li>Revisar el historial de visitas anteriores</li>
+        </ul>
+      </div>
+      <div class="role">
+        <h3>Doctora y consultorio</h3>
+        <div class="sub">Control de la agenda</div>
+        <ul>
+          <li>Agenda del día con todas las citas ordenadas</li>
+          <li>Bandeja de solicitudes pendientes de confirmar</li>
+          <li>Expediente clínico de cada paciente a mano</li>
+          <li>Búsqueda rápida por nombre de paciente</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="wrap">
+    <h2>Empezá a agendar hoy</h2>
+    <p>Probá DentaAgenda con el perfil de paciente o el de la doctora y recorré el flujo completo.</p>
+    <a class="btn btn-primary" href="index.html">Entrar a la app</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M12 5.5c-1.2-1-2.6-1.5-4-1.5C5.2 4 3 6.2 3 9c0 3.5 2 6.5 3.5 9 .6 1 1.3 2 2.2 2 .9 0 1.3-.7 1.6-1.9l.7-2.6c.1-.4.4-.6.8-.6s.7.2.8.6l.7 2.6c.3 1.2.7 1.9 1.6 1.9.9 0 1.6-1 2.2-2C19.5 15.5 21 12.5 21 9c0-2.8-2.2-5-5-5-1.4 0-2.8.5-4 1.5z"/></svg>
+      DentaAgenda
+    </div>
+    <div class="foot-links">
+      <a href="#funciones">Funciones</a>
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="index.html">Entrar a la app</a>
+    </div>
+    <div>Proyecto ISW II · 2026</div>
+  </div>
+</footer>
+
+</body>
+</html>
