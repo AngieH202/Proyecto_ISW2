@@ -28,6 +28,7 @@ create table if not exists public.citas (
   motivo            text,
 
   estado            text        not null default 'pendiente'
+                    constraint citas_estado_valido
                     check (estado in ('pendiente','confirmada','atendida','cancelada','nopresento')),
 
   -- Tipo date, no text: el cliente solo escribe y consulta en formato
@@ -37,6 +38,23 @@ create table if not exists public.citas (
 
   created_at        timestamptz default now()
 );
+
+-- ── Convergencia ─────────────────────────────────────────────────────
+-- Ver la nota de 001. identidad es la que suele faltar en una base
+-- creada antes de que existiera esa columna.
+alter table public.citas
+  add column if not exists nombre_paciente   text,
+  add column if not exists identidad         text,
+  add column if not exists telefono_paciente text,
+  add column if not exists hora              text,
+  add column if not exists motivo            text,
+  add column if not exists estado            text        default 'pendiente',
+  add column if not exists fecha             date,
+  add column if not exists created_at        timestamptz default now();
+
+alter table public.citas drop constraint if exists citas_estado_valido;
+alter table public.citas add  constraint citas_estado_valido
+  check (estado in ('pendiente','confirmada','atendida','cancelada','nopresento'));
 
 comment on table  public.citas           is 'Solicitudes de cita y su estado.';
 comment on column public.citas.identidad is 'Identidad del paciente. Reservada: el cliente todavia no la escribe.';

@@ -6,9 +6,11 @@
 --   NO lo corras sobre la base que ya usas: mete pacientes inventados
 --   junto a los reales.
 --
--- Es re-ejecutable: los expedientes se insertan con on conflict do
--- nothing sobre identidad, y las citas y visitas solo se siembran si su
--- tabla esta vacia.
+-- Es idempotente fila por fila, no todo-o-nada: los expedientes usan
+-- on conflict do nothing sobre identidad, y las citas y las visitas
+-- llevan un where not exists correlacionado con su propia clave
+-- natural. Correrlo diez veces deja lo mismo que correrlo una, y si
+-- falta una sola fila, la repone sin tocar el resto.
 --
 -- Las horas salen de SLOTS_BASE (assets/js/modules/config.js); las fechas
 -- son relativas a hoy para que la agenda del dia nunca quede vacia.
@@ -42,7 +44,14 @@ from (
     ('Carlos Mendoza',  '0501-1985-06789', '9123-4567', current_date - 7, '11:30 AM', 'Limpieza semestral',          'atendida'),
     ('Ana Gutiérrez',   '0801-2001-55555', '8899-1122', current_date - 3, '7:00 AM',  'Consulta general',            'cancelada')
 ) as semilla (nombre_paciente, identidad, telefono_paciente, fecha, hora, motivo, estado)
-where not exists (select 1 from public.citas);
+-- Clave natural de una cita: el horario. Correlacionado con la fila de
+-- la semilla, no un "hay alguna cita" global, para que reponga solo lo
+-- que falte.
+where not exists (
+  select 1 from public.citas c
+  where c.fecha = semilla.fecha
+    and c.hora  = semilla.hora
+);
 
 -- ── Visitas clinicas ─────────────────────────────────────────────────
 -- Se enlazan al expediente por identidad, nunca por un uuid fijo: los
@@ -73,4 +82,12 @@ from (
      'Paciente reporta estres laboral y despertares con dolor mandibular.')
 ) as s (identidad, fecha, hora, diagnostico, tratamientos, medicamentos, plan, notas)
 join public.expedientes e on e.identidad = s.identidad
-where not exists (select 1 from public.visitas_clinicas);
+-- Clave natural de una visita: el expediente, el dia y el diagnostico.
+-- No entra hora: es una cadena que cambia a cada minuto y volveria el
+-- chequeo inutil.
+where not exists (
+  select 1 from public.visitas_clinicas v
+  where v.expediente_id = e.id
+    and v.fecha         = s.fecha
+    and v.diagnostico   = s.diagnostico
+);

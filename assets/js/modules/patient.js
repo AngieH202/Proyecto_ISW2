@@ -219,16 +219,8 @@ export async function enviarSolicitud() {
   btn.textContent = 'Enviando...';
 
   const hora = SLOTS_BASE[slotSel];
-  const { ok } = await sbPost('citas', {
-    nombre_paciente: pacienteData.nombre,
-    telefono_paciente: pacienteData.tel,
-    fecha: diaSel.key,
-    hora,
-    motivo,
-    estado: 'pendiente'
-  });
 
-  if (ok) {
+  const mostrarConfirmacion = () => {
     const detail = document.getElementById('confirm-detail');
     if (detail) {
       detail.innerHTML = `
@@ -239,6 +231,69 @@ export async function enviarSolicitud() {
         <div><span>Estado</span><span style="color:#856404;font-weight:700;background:#fff3cd;padding:2px 8px;border-radius:8px">Pendiente de confirmación</span></div>`;
     }
     setPaso(4);
+  };
+
+  // Una sola consulta por el horario, y la decision se toma en JS. Se
+  // evita a proposito un or=() de PostgREST: ahi los valores van dentro
+  // de la expresion y una coma en un nombre rompe el filtro.
+  const enEseSlot = await sbGet(
+    'citas',
+    `fecha=eq.${encodeURIComponent(diaSel.key)}` +
+    `&hora=eq.${encodeURIComponent(hora)}` +
+    '&estado=neq.cancelada&select=id,identidad,nombre_paciente'
+  );
+  const ocupantes = Array.isArray(enEseSlot) ? enEseSlot : [];
+
+  // Propia si coincide la identidad, que es unica. El nombre solo sirve
+  // de respaldo para las citas viejas, creadas antes de que se guardara
+  // identidad: comparar por nombre a secas le mostraria a un homonimo la
+  // confirmacion de una cita ajena.
+  const esPropia = ocupantes.some((c) => (
+    c.identidad
+      ? c.identidad === pacienteData.id
+      : c.nombre_paciente === pacienteData.nombre
+  ));
+
+  // Ya entro: un reintento tras un timeout, o el boton de atras. Se
+  // muestra la confirmacion en vez de crear una segunda cita identica.
+  if (esPropia) {
+    mostrarConfirmacion();
+    btn.disabled = false;
+    btn.textContent = 'Enviar solicitud';
+    return;
+  }
+
+  // El horario es de otra persona. Se corta antes de intentar el insert,
+  // sin depender de que el indice unico de 006 este puesto.
+  if (ocupantes.length) {
+    notif('Ese horario acaba de ocuparse. Elegí otro.');
+    await cargarSlotsDia();
+    setPaso(2);
+    btn.disabled = false;
+    btn.textContent = 'Enviar solicitud';
+    return;
+  }
+
+  const { ok, status } = await sbPost('citas', {
+    nombre_paciente: pacienteData.nombre,
+    // La columna ya existia sin usarse. Mandarla da una clave de cruce
+    // fiable contra expedientes, en vez del nombre escrito a mano.
+    identidad: pacienteData.id,
+    telefono_paciente: pacienteData.tel,
+    fecha: diaSel.key,
+    hora,
+    motivo,
+    estado: 'pendiente'
+  });
+
+  if (ok) {
+    mostrarConfirmacion();
+  } else if (status === 409) {
+    // Choca contra el indice unico de 006: alguien reservo ese horario
+    // entre que se eligio y se confirmo.
+    notif('Ese horario acaba de ocuparse. Elegí otro.');
+    await cargarSlotsDia();
+    setPaso(2);
   } else {
     notif('Error al enviar. Intentá de nuevo.');
   }

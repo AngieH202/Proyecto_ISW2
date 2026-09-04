@@ -20,6 +20,7 @@ El diagrama entidad-relación está en [arquitectura.md](../arquitectura.md).
 | 007 | [`007_sincronizar_visitas.sql`](007_sincronizar_visitas.sql) | Trigger que mantiene cuadrado `expedientes.visitas` | Opcional |
 | 008 | [`008_vistas_de_consulta.sql`](008_vistas_de_consulta.sql) | Tres vistas para consultas e informes | Opcional |
 | 009 | [`009_datos_de_prueba.sql`](009_datos_de_prueba.sql) | Pacientes, citas y visitas de ejemplo | No |
+| 010 | [`010_comprobaciones.sql`](010_comprobaciones.sql) | Solo `SELECT`: busca duplicados y contadores torcidos | No |
 
 Dependencias que fuerzan el orden:
 
@@ -57,10 +58,29 @@ orden y correrlo.
 for f in migracion/0*.sql; do psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f "$f"; done
 ```
 
-Los scripts son re-ejecutables: las tablas usan `create table if not exists`,
-los índices `create index if not exists`, las vistas y funciones `create or
-replace`, el trigger hace `drop trigger if exists` antes de crearse, y la
-semilla no duplica filas.
+## Idempotencia
+
+Los scripts no solo son seguros de re-ejecutar: **convergen**. Correrlos sobre
+una base que ya existe la deja al día en vez de no hacer nada.
+
+| Qué | Cómo |
+| --- | --- |
+| Tablas | `create table if not exists`, y detrás un `alter table ... add column if not exists` por cada columna |
+| Restricciones y FK | Postgres no tiene `add constraint if not exists`, así que va el par `drop constraint if exists` + `add constraint`, con nombres explícitos |
+| Índices y vistas | `create index if not exists`, `create or replace view` |
+| Trigger y función | `create or replace function`, y `drop trigger if exists` antes de crearlo |
+| Semilla | Guard **por fila**, no todo-o-nada: si falta una sola, la repone sin tocar el resto |
+
+Un detalle de las columnas: se agregan **anulables** aunque en el `create` sean
+`not null`. Un `add column` con `not null` y sin default falla si la tabla ya
+tiene filas; endurecerlas va aparte, después de rellenar.
+
+Para comprobarlo, corré [`010_comprobaciones.sql`](010_comprobaciones.sql)
+después de aplicar la secuencia y otra vez después de repetirla: los resultados
+tienen que ser idénticos, y todos los conteos en cero.
+
+La aplicación también es idempotente en sus tres caminos de escritura; está
+documentado en [arquitectura.md](../arquitectura.md).
 
 ## Un paso que no es SQL
 

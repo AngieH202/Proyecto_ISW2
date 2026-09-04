@@ -1,4 +1,4 @@
-import { sbGet, sbPost, authLogin } from './api.js';
+import { sbGet, sbUpsert, authLogin } from './api.js';
 import { hideError, showError, showScreen, labelEstado } from './utils.js';
 import { renderDias, setPaso, setPacienteData, resetSeleccion } from './patient.js';
 import { DOCTORA_USUARIO, DOCTORA_EMAIL } from './config.js';
@@ -55,17 +55,27 @@ export async function loginPaciente() {
   btn.textContent = 'Cargando...';
   hideError();
 
-  const existentes = await sbGet('expedientes', `identidad=eq.${encodeURIComponent(id)}`);
-  if (!existentes.length) {
-    await sbPost('expedientes', {
-      nombre,
-      identidad: id,
-      edad: parseInt(edad),
-      telefono: tel,
-      visitas: 0,
-      ultima_visita: '—',
-      notas: 'Paciente nuevo.'
-    });
+  // Un solo viaje en vez de leer y despues escribir: la unicidad de
+  // identidad la resuelve Postgres, asi que dos pestanas a la vez ya no
+  // crean dos fichas del mismo paciente.
+  //
+  // Se mandan solo los datos que el paciente escribe. visitas,
+  // ultima_visita y notas quedan fuera a proposito: merge-duplicates
+  // actualiza lo que se manda, e incluirlas le borraria el historial a
+  // un paciente que vuelve. Las tres tienen default en el esquema, asi
+  // que al crear la ficha se llenan igual.
+  const alta = await sbUpsert('expedientes', {
+    nombre,
+    identidad: id,
+    edad: parseInt(edad),
+    telefono: tel
+  }, 'identidad');
+
+  if (!alta.ok) {
+    showError('No pudimos guardar tus datos. Revisá tu conexión.');
+    btn.disabled = false;
+    btn.textContent = 'Agendar cita';
+    return;
   }
 
   setPacienteData({ nombre, id, edad, tel });

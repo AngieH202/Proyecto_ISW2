@@ -287,7 +287,13 @@ window.toggleTrat = function (btn) {
   btn.classList.toggle('sel');
 };
 
+// Bandera de en-vuelo: el boton se deshabilita solo, pero esto tambien
+// corta una segunda llamada que no venga del boton.
+let guardandoDiagnostico = false;
+
 window.guardarDiagnostico = async function () {
+  if (guardandoDiagnostico) return;
+
   const diagnostico = document.getElementById('m-diagnostico').value.trim();
   if (!diagnostico) {
     notif('Por favor ingresá un diagnóstico.');
@@ -300,38 +306,70 @@ window.guardarDiagnostico = async function () {
   const plan = document.getElementById('m-plan').value.trim();
   const notas = document.getElementById('m-notas').value.trim();
   const btn = document.getElementById('btn-guardar-diag');
+  guardandoDiagnostico = true;
   if (btn) {
     btn.disabled = true;
     btn.textContent = 'Guardando...';
   }
-  const { ok } = await sbPost('visitas_clinicas', {
-    expediente_id: window.expedienteActual.id,
-    fecha: fechaHoy(),
-    hora: horaAhora(),
-    diagnostico,
-    tratamientos: tratSel.join(', '),
-    medicamentos,
-    plan,
-    notas
-  });
-  if (ok) {
-    const nuevasVisitas = (window.expedienteActual.visitas || 0) + 1;
-    await sbPatch('expedientes', 'id=eq.' + window.expedienteActual.id, { visitas: nuevasVisitas, ultima_visita: fechaHoy() });
-    window.expedienteActual.visitas = nuevasVisitas;
-    window.expedienteActual.ultima_visita = fechaHoy();
-    const modal = document.getElementById('modal-diag');
-    if (modal) modal.classList.remove('open');
-    notif('✓ Visita registrada correctamente');
-    if (document.getElementById('screen-expediente').classList.contains('active')) {
-      renderPacHeader(window.expedienteActual);
-      cargarHistorial(window.expedienteActual.id);
+
+  const expId = window.expedienteActual.id;
+  const hoy = fechaHoy();
+
+  try {
+    // Clave natural de una visita: expediente, dia y diagnostico. No
+    // entra hora porque horaAhora() cambia a cada minuto y volveria el
+    // chequeo inutil justo frente a un reintento.
+    const duplicada = await sbGet(
+      'visitas_clinicas',
+      `expediente_id=eq.${expId}` +
+      `&fecha=eq.${encodeURIComponent(hoy)}` +
+      `&diagnostico=eq.${encodeURIComponent(diagnostico)}` +
+      '&select=id'
+    );
+
+    let ok = Array.isArray(duplicada) && duplicada.length > 0;
+
+    if (!ok) {
+      ({ ok } = await sbPost('visitas_clinicas', {
+        expediente_id: expId,
+        fecha: hoy,
+        hora: horaAhora(),
+        diagnostico,
+        tratamientos: tratSel.join(', '),
+        medicamentos,
+        plan,
+        notas
+      }));
     }
-  } else {
-    notif('Error al guardar. Verificá tu conexión.');
-  }
-  if (btn) {
-    btn.disabled = false;
-    btn.textContent = 'Guardar registro de visita';
+
+    if (ok) {
+      // Recuento absoluto contra la tabla, no un incremento sobre la
+      // copia local: repetirlo da siempre el mismo numero y no puede
+      // pisar el valor bueno con uno viejo. Coincide con el trigger de
+      // 007 cuando este aplicado, porque los dos cuentan filas.
+      const visitas = await sbGet('visitas_clinicas', `expediente_id=eq.${expId}&select=id`);
+      const total = Array.isArray(visitas) ? visitas.length : 0;
+
+      await sbPatch('expedientes', 'id=eq.' + expId, { visitas: total, ultima_visita: hoy });
+      window.expedienteActual.visitas = total;
+      window.expedienteActual.ultima_visita = hoy;
+
+      const modal = document.getElementById('modal-diag');
+      if (modal) modal.classList.remove('open');
+      notif('✓ Visita registrada correctamente');
+      if (document.getElementById('screen-expediente').classList.contains('active')) {
+        renderPacHeader(window.expedienteActual);
+        cargarHistorial(expId);
+      }
+    } else {
+      notif('Error al guardar. Verificá tu conexión.');
+    }
+  } finally {
+    guardandoDiagnostico = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Guardar registro de visita';
+    }
   }
 };
 

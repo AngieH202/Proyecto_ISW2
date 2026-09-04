@@ -25,11 +25,32 @@ create table if not exists public.perfiles (
   -- El check deja un solo rol a proposito: hoy la unica cuenta del
   -- sistema es la de la doctora. Los pacientes no tienen usuario, se
   -- identifican con su numero de identidad.
-  rol        text        not null check (rol in ('doctora')),
+  rol        text        not null
+             constraint perfiles_rol_valido check (rol in ('doctora')),
 
   telefono   text,
   created_at timestamptz default now()
 );
+
+-- ── Convergencia ─────────────────────────────────────────────────────
+-- create table if not exists no toca una tabla que ya existe, ni para
+-- agregarle una columna que le falte. Este bloque hace que correr el
+-- script sobre una base vieja la deje al dia.
+--
+-- Las columnas se agregan anulables aunque arriba sean not null: un
+-- add column con not null y sin default falla si la tabla ya tiene
+-- filas. Si hace falta endurecerlas, va aparte y despues de rellenar.
+alter table public.perfiles
+  add column if not exists nombre     text,
+  add column if not exists rol        text,
+  add column if not exists telefono   text,
+  add column if not exists created_at timestamptz default now();
+
+-- Postgres no tiene add constraint if not exists, asi que el par
+-- drop + add es la forma idempotente. El nombre explicito del create es
+-- lo que permite volver a encontrarla.
+alter table public.perfiles drop constraint if exists perfiles_rol_valido;
+alter table public.perfiles add  constraint perfiles_rol_valido check (rol in ('doctora'));
 
 comment on table  public.perfiles     is 'Datos de la doctora, enlazados a su usuario de Supabase Auth.';
 comment on column public.perfiles.id  is 'Mismo uuid que auth.users.id.';

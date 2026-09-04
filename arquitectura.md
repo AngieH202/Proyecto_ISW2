@@ -239,16 +239,40 @@ Puntos abiertos, en orden de importancia:
    tablas no están restringidas, cualquiera con la URL del proyecto puede leer
    y modificar los expedientes clínicos completos. Es lo primero que conviene
    revisar antes de usar esto con datos reales de pacientes.
-2. **`citas` y `expedientes` se cruzan por nombre**, sin llave foránea.
+2. **`citas` y `expedientes` todavía no tienen llave foránea.** Las citas nuevas
+   ya guardan `identidad`, así que cruzan bien; las viejas siguen cruzándose por
+   nombre. Falta rellenar lo histórico y recién ahí poner la FK.
 3. **Fechas y horas se guardan como texto.** `hora` es un literal de slot
    (`'9:15 AM'`), lo que fuerza el parseo manual que hace `cargarSlotsDia()`
    para decidir si un horario ya pasó.
 4. **`app.js` mezcla dos responsabilidades**: es el entrypoint y a la vez todo
    el panel de la doctora. Partirlo en `doctora.js` y `expedientes.js` dejaría
    los seis módulos parejos.
-5. **`visitas` en `expedientes` es un contador denormalizado** que se
-   incrementa a mano al guardar un diagnóstico; puede desincronizarse de la
-   cuenta real de filas en `visitas_clinicas`.
+5. **`visitas` en `expedientes` sigue siendo un contador denormalizado.** Ya no
+   se desincroniza —el cliente escribe un recuento absoluto— pero el dato sigue
+   duplicado respecto de `visitas_clinicas`. El trigger de
+   `migracion/007_sincronizar_visitas.sql` lo hace responsabilidad de la base.
+
+---
+
+## Idempotencia
+
+Los tres caminos de escritura dejan el mismo estado se ejecuten una o diez
+veces. Cada uno lo consigue distinto:
+
+| Operación | Cómo se vuelve repetible |
+| --- | --- |
+| `loginPaciente` | `upsert` sobre `identidad` en una sola ida. Manda solo los datos que el paciente escribe: incluir `visitas` o `ultima_visita` le borraría el historial a quien vuelve |
+| `enviarSolicitud` | Consulta quién ocupa el horario y decide por **identidad**, no por nombre: si la cita ya es suya muestra la confirmación, si es de otro avisa sin intentar crearla. El nombre solo se usa de respaldo para las citas viejas, creadas antes de que se guardara `identidad` |
+| `guardarDiagnostico` | Descarta por clave natural —expediente, día y diagnóstico— y después escribe un recuento **absoluto** de visitas, no un incremento sobre la copia local |
+
+`marcarAtendida`, `cambiarEstado` y `accionPendiente` ya lo eran: hacen `PATCH`
+a un valor fijo.
+
+Del lado de la base, los scripts de `migracion/` además **convergen**: correrlos
+sobre una base que ya existe le agrega las columnas y restricciones que le
+falten, en vez de no hacer nada. `migracion/010_comprobaciones.sql` verifica que
+no haya quedado nada duplicado.
 
 ---
 
