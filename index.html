@@ -16,7 +16,10 @@
     }
   })();
 </script>
-<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/app.css?v=ebf89ca3">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/icono.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icono.svg">
 <title>DentaAgenda</title>
 </head>
 <body>
@@ -269,6 +272,19 @@
 
 </div>
 
-  <script type="module" src="assets/js/app.js"></script>
+  <script type="module" src="assets/js/app.js?v=ebf89ca3"></script>
+
+  <script>
+    // El service worker solo se registra sobre HTTPS o localhost; en
+    // file:// el navegador lo rechaza. No se registra tampoco en la
+    // landing: el alcance './' ya la cubre desde aca.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {
+          // Sin service worker la app funciona igual, solo sin offline.
+        });
+      });
+    }
+  </script>
 </body>
 </html>

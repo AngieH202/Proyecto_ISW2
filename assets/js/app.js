@@ -1,5 +1,6 @@
 import { sbGet, sbPost, sbPatch } from './modules/api.js';
 import { notif, showScreen, labelEstado, iniciales, fechaHoy, horaAhora } from './modules/utils.js';
+import { estado as estadoCache, limpiar as limpiarCache } from './modules/cache.js';
 
 // Importados por su efecto: cada módulo expone en window las funciones
 // que el HTML necesita en sus atributos onclick.
@@ -8,6 +9,11 @@ import './modules/patient.js';
 
 // showScreen se usa en onclick del HTML y ningún módulo lo expone.
 window.showScreen = showScreen;
+
+// Para inspeccionar la caché desde la consola del navegador:
+// cacheEstado() devuelve entradas, aciertos, fallos y tasa de aciertos.
+window.cacheEstado = estadoCache;
+window.cacheLimpiar = limpiarCache;
 
 const DIAS_DOC = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MESES_DOC = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -191,7 +197,9 @@ window.filtrarExpedientes = function (v) {
 
 window.abrirExpediente = async function (exp) {
   window.expedienteActual = exp;
-  const fresco = await sbGet('expedientes', 'id=eq.' + exp.id);
+  // Sin cache: el sentido de esta lectura es traer el expediente al dia,
+  // no repetir lo que ya se mostro en el listado.
+  const fresco = await sbGet('expedientes', 'id=eq.' + exp.id, { cache: false });
   if (fresco.length) window.expedienteActual = fresco[0];
   renderPacHeader(window.expedienteActual);
   showScreen('expediente');
@@ -319,12 +327,14 @@ window.guardarDiagnostico = async function () {
     // Clave natural de una visita: expediente, dia y diagnostico. No
     // entra hora porque horaAhora() cambia a cada minuto y volveria el
     // chequeo inutil justo frente a un reintento.
+    // Sin cache: de esta lectura depende si se inserta o no.
     const duplicada = await sbGet(
       'visitas_clinicas',
       `expediente_id=eq.${expId}` +
       `&fecha=eq.${encodeURIComponent(hoy)}` +
       `&diagnostico=eq.${encodeURIComponent(diagnostico)}` +
-      '&select=id'
+      '&select=id',
+      { cache: false }
     );
 
     let ok = Array.isArray(duplicada) && duplicada.length > 0;
@@ -347,7 +357,13 @@ window.guardarDiagnostico = async function () {
       // copia local: repetirlo da siempre el mismo numero y no puede
       // pisar el valor bueno con uno viejo. Coincide con el trigger de
       // 007 cuando este aplicado, porque los dos cuentan filas.
-      const visitas = await sbGet('visitas_clinicas', `expediente_id=eq.${expId}&select=id`);
+      // Sin cache: este numero se escribe. Contarlo sobre una respuesta
+      // vieja dejaria el contador mal, que es justo lo que se arreglo.
+      const visitas = await sbGet(
+        'visitas_clinicas',
+        `expediente_id=eq.${expId}&select=id`,
+        { cache: false }
+      );
       const total = Array.isArray(visitas) ? visitas.length : 0;
 
       await sbPatch('expedientes', 'id=eq.' + expId, { visitas: total, ultima_visita: hoy });

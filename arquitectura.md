@@ -45,7 +45,8 @@ C4Container
         Container(landing, "Landing", "landing.html", "Página de presentación con estilos embebidos. Sus enlaces de entrada apuntan a index.html con el parámetro app igual a 1")
         Container(spa, "Aplicación", "index.html", "Marcado de las cuatro pantallas. Un script clásico en el head redirige a la landing si falta el parámetro app")
         Container(css, "Hoja de estilos", "assets/css/app.css", "Estilos de la aplicación")
-        Container(js, "Lógica de la aplicación", "assets/js - módulos ES", "Entrypoint app.js más cinco módulos. Sin bundler ni dependencias")
+        Container(js, "Lógica de la aplicación", "assets/js - módulos ES", "Entrypoint app.js más seis módulos. Sin bundler ni dependencias")
+        Container(sw, "Service worker", "sw.js", "Precarga los estáticos y guarda las últimas respuestas de datos. Es lo que deja la app usable sin conexión")
     }
 
     System_Boundary(sb, "Supabase") {
@@ -59,6 +60,10 @@ C4Container
     Rel(landing, spa, "Entrar a la app", "enlace con app igual a 1")
     Rel(spa, css, "Carga", "link rel stylesheet")
     Rel(spa, js, "Carga y expone handlers en window", "script type module")
+    Rel(spa, sw, "Registra", "navigator.serviceWorker")
+    Rel(js, sw, "Sus peticiones pasan por acá", "intercepta fetch")
+    Rel(sw, gotrue, "Deja pasar sin tocar", "nunca se cachea")
+    Rel(sw, postgrest, "Red primero, caché de respaldo", "solo GET")
     Rel(js, gotrue, "Autentica a la doctora", "POST token")
     Rel(js, postgrest, "Consulta y modifica registros", "GET, POST, PATCH")
     Rel(postgrest, pg, "Lee y escribe", "SQL")
@@ -93,7 +98,8 @@ C4Component
         Component(app, "app.js", "Entrypoint", "Panel de la doctora: agenda del día, bandeja de pendientes, listado de expedientes, historial de visitas y modal de diagnóstico")
         Component(auth, "auth.js", "Módulo", "setRole, loginDoctora, loginPaciente, consultarEstado y logout")
         Component(patient, "patient.js", "Módulo", "Calendario semanal, slots por día, pasos 1 a 4 del flujo y envío de la solicitud")
-        Component(api, "api.js", "Módulo", "sbGet, sbPost, sbPatch y authLogin sobre fetch")
+        Component(api, "api.js", "Módulo", "sbGet, sbPost, sbPatch, sbUpsert y authLogin sobre fetch. Cachea las lecturas e invalida al escribir")
+        Component(cache, "cache.js", "Módulo", "Caché en memoria con vencimiento por entrada, invalidación por tabla y métricas de aciertos")
         Component(utils, "utils.js", "Módulo", "notif, showError, hideError, showScreen, labelEstado, iniciales, fechaHoy y horaAhora")
         Component(config, "config.js", "Módulo", "URL y anon key de Supabase, usuario y email de la doctora, horarios base y nombres de días y meses")
     }
@@ -112,6 +118,7 @@ C4Component
     Rel(patient, utils, "Usa helpers")
     Rel(patient, config, "Lee horarios base")
     Rel(api, config, "Lee URL y anon key")
+    Rel(api, cache, "Guarda lecturas e invalida al escribir")
     Rel(api, supabase, "fetch", "HTTPS")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
@@ -255,6 +262,54 @@ Puntos abiertos, en orden de importancia:
 
 ---
 
+## Caché
+
+Tres niveles, cada uno resolviendo un problema distinto.
+
+**Datos, en memoria** — [`assets/js/modules/cache.js`](assets/js/modules/cache.js).
+`sbGet` guarda cada respuesta bajo la clave `tabla?query` con vencimiento de 30 s
+por defecto, y toda escritura invalida las claves de la tabla afectada. Ataca la
+redundancia medible: `cargarExpedientes()` trae la tabla entera y se dispara en
+cada cambio a la pestaña Expedientes. Vive mientras viva la pestaña; al recargar
+arranca vacía, a propósito — guardar expedientes clínicos en disco es una
+decisión aparte, no un efecto secundario de querer menos peticiones.
+
+Una dependencia cruzada que no es obvia: escribir en `visitas_clinicas` invalida
+también `expedientes`, porque el trigger de `007` mueve el contador del lado de
+la base.
+
+**Lo que nunca se cachea.** Cinco lecturas van con `{ cache: false }`, y no es
+una optimización sino una condición de correctitud: de ellas depende si se
+escribe o no. Servir una respuesta vieja ahí dejaría pasar un duplicado y
+desharía el trabajo de idempotencia. `cache: false` manda `no-store` en el
+`fetch`, así que también saltea la caché del service worker.
+
+| Lectura | Por qué debe ser fresca |
+| --- | --- |
+| `cargarSlotsDia` | Mostrar libre un horario ya tomado es el peor error de esa pantalla |
+| `enviarSolicitud` · quién ocupa el slot | Decide si se crea la cita |
+| `guardarDiagnostico` · visita duplicada | Decide si se inserta |
+| `guardarDiagnostico` · conteo de visitas | Ese número se escribe |
+| `abrirExpediente` · relectura | Su sentido es traer el expediente al día |
+
+**Offline, con service worker** — [`sw.js`](sw.js). Precarga los estáticos y
+sirve los datos con **red primero y caché de respaldo**. No es
+stale-while-revalidate a propósito: esta app lee las mismas tablas que escribe,
+así que servir datos viejos a alguien con conexión mostraría horarios libres que
+ya no lo están. Con red se ve lo último; sin red, lo último que se vio. Nunca
+toca `POST`, `PATCH` ni el login.
+
+**Estáticos, por versionado** — `node scripts/versionar.mjs` sella el CSS y el JS
+de entrada con el hash de su contenido y renombra las cachés del service worker.
+Correrlo antes de publicar es lo que impide que un navegador siga sirviendo la
+versión anterior. El script es idempotente: si nada cambió, no toca ningún
+archivo.
+
+Para inspeccionarla desde la consola del navegador: `cacheEstado()` devuelve
+entradas, aciertos, fallos y tasa de aciertos; `cacheLimpiar()` la vacía.
+
+---
+
 ## Idempotencia
 
 Los tres caminos de escritura dejan el mismo estado se ejecuten una o diez
@@ -282,15 +337,23 @@ no haya quedado nada duplicado.
 Proyecto_ISW2/
 ├── landing.html              página de presentación
 ├── index.html                marcado de la app y redirect a la landing
+├── sw.js                     service worker: offline y caché de datos
+├── manifest.json             metadatos de la PWA
 ├── package.json              solo { "type": "module" }
 ├── arquitectura.md           este documento
+├── scripts/
+│   └── versionar.mjs         sella los estáticos con el hash del contenido
+├── migracion/                scripts SQL de la base
 └── assets/
+    ├── icono.svg             icono de la app
+    ├── icono-maskable.svg    variante con zona segura para Android
     ├── css/
     │   └── app.css           estilos de la app
     └── js/
         ├── app.js            entrypoint y panel de la doctora
         └── modules/
             ├── config.js     constantes y credenciales
+            ├── cache.js      caché en memoria con vencimiento
             ├── api.js        cliente HTTP de Supabase
             ├── utils.js      helpers de UI y formato
             ├── auth.js       login, roles y consulta de estado

@@ -127,7 +127,13 @@ export async function cargarSlotsDia() {
   const target = document.getElementById('horarios-grid');
   if (target) target.innerHTML = '<div class="loading">Cargando horarios...</div>';
 
-  const ocupadas = await sbGet('citas', `estado=neq.cancelada&fecha=eq.${diaSel.key}&select=hora`);
+  // Sin cache: mostrar como libre un horario que otro acaba de tomar es
+  // el peor error posible en esta pantalla.
+  const ocupadas = await sbGet(
+    'citas',
+    `estado=neq.cancelada&fecha=eq.${diaSel.key}&select=hora`,
+    { cache: false }
+  );
   const horasOcupadas = new Set((ocupadas || []).map((c) => c.hora));
 
   const ahora = new Date();
@@ -236,11 +242,14 @@ export async function enviarSolicitud() {
   // Una sola consulta por el horario, y la decision se toma en JS. Se
   // evita a proposito un or=() de PostgREST: ahi los valores van dentro
   // de la expresion y una coma en un nombre rompe el filtro.
+  // Sin cache: de esta lectura depende si se crea o no una fila. Una
+  // respuesta vieja dejaria pasar un duplicado.
   const enEseSlot = await sbGet(
     'citas',
     `fecha=eq.${encodeURIComponent(diaSel.key)}` +
     `&hora=eq.${encodeURIComponent(hora)}` +
-    '&estado=neq.cancelada&select=id,identidad,nombre_paciente'
+    '&estado=neq.cancelada&select=id,identidad,nombre_paciente',
+    { cache: false }
   );
   const ocupantes = Array.isArray(enEseSlot) ? enEseSlot : [];
 

@@ -1,0 +1,27 @@
+{
+  "name": "DentaAgenda",
+  "short_name": "DentaAgenda",
+  "description": "Sistema de citas odontológicas de la clínica Dra. Belkis Suisse.",
+  "lang": "es",
+  "dir": "ltr",
+  "start_url": "./index.html?app=1",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EAF4FB",
+  "theme_color": "#0077B6",
+  "icons": [
+    {
+      "src": "./assets/icono.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icono-maskable.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "maskable"
+    }
+  ]
+}

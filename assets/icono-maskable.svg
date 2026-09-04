@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512" role="img" aria-label="DentaAgenda">
+  <defs>
+    <linearGradient id="fondoMask" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0077B6"/>
+      <stop offset="1" stop-color="#00B4D8"/>
+    </linearGradient>
+  </defs>
+  <!-- Sin esquinas redondeadas y con el diente al 48%: el sistema puede
+       recortar hasta el 40% exterior, asi que todo lo que importa vive
+       dentro del circulo seguro del centro. -->
+  <rect width="64" height="64" fill="url(#fondoMask)"/>
+  <g transform="translate(32 32) scale(0.48) translate(-32 -32)">
+    <path fill="#ffffff" d="M22 4C15 4 8 10 8 18c0 4 1.5 7.5 3 10.5C13.5 33 14 36 14 40c0 6 2 16 6 16 3 0 4-4 5-8 1-4 2-6 7-6s6 2 7 6c1 4 2 8 5 8 4 0 6-10 6-16 0-4 .5-7 3-11.5 1.5-3 3-6.5 3-10.5 0-8-7-14-14-14-3 0-5.5 1-7 2.5C34.5 5 32.5 4 30 4c-2.5 0-5 1-8 0z"/>
+  </g>
+</svg>
