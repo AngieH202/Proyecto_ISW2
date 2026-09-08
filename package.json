@@ -1,3 +1,16 @@
 {
-  "type": "module"
+  "name": "dentaagenda",
+  "private": true,
+  "type": "module",
+  "description": "Sistema de citas odontológicas — Proyecto ISW II",
+  "scripts": {
+    "test": "node --test \"test/unidad/*.test.mjs\" \"test/integracion/*.test.mjs\" \"test/estructura/*.test.mjs\"",
+    "test:unidad": "node --test \"test/unidad/*.test.mjs\"",
+    "test:integracion": "node --test \"test/integracion/*.test.mjs\"",
+    "test:estructura": "node --test \"test/estructura/*.test.mjs\"",
+    "verificar:sitio": "node scripts/verificar-sitio.mjs",
+    "verificar:rls": "node scripts/verificar-rls.mjs",
+    "versionar": "node scripts/versionar.mjs",
+    "imagenes": "node scripts/generar-imagenes.mjs"
+  }
 }
