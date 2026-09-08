@@ -2,6 +2,7 @@ import { sbGet, sbUpsert, authLogin } from './api.js';
 import { hideError, showError, showScreen, labelEstado } from './utils.js';
 import { renderDias, setPaso, setPacienteData, resetSeleccion } from './patient.js';
 import { DOCTORA_USUARIO, DOCTORA_EMAIL } from './config.js';
+import { abrirSesion } from './sesion.js';
 
 export function setRole(r) {
   document.querySelectorAll('.role-tab').forEach((b, i) => b.classList.toggle('active', (i === 0 && r === 'doctora') || (i === 1 && r === 'paciente')));
@@ -27,16 +28,26 @@ export async function loginDoctora() {
   btn.textContent = 'Ingresando...';
   hideError();
   const res = await authLogin(DOCTORA_EMAIL, pass);
-  if (res.access_token) {
-    showScreen('doctora');
-    if (typeof window.cargarCitas === 'function') window.cargarCitas();
-    if (typeof window.cargarPendientes === 'function') window.cargarPendientes();
-    if (typeof window.cargarExpedientes === 'function') window.cargarExpedientes();
-  } else {
+
+  if (!res.access_token) {
     showError('Usuario o contraseña incorrectos.');
+    btn.disabled = false;
+    btn.textContent = 'Ingresar';
+    return;
   }
-  btn.disabled = false;
-  btn.textContent = 'Ingresar';
+
+  // El token deja de descartarse: se cambia por una cookie HttpOnly que
+  // el servidor pueda verificar. Sin este paso, /admin no abre.
+  const abierta = await abrirSesion(res.access_token, res.expires_in);
+  if (!abierta) {
+    showError('No pudimos iniciar la sesión. Intentá de nuevo.');
+    btn.disabled = false;
+    btn.textContent = 'Ingresar';
+    return;
+  }
+
+  // El panel ya no vive en esta página: está detrás de /admin.
+  window.location.href = '/admin';
 }
 
 export async function loginPaciente() {
@@ -151,6 +162,9 @@ export async function consultarEstado() {
   btn.textContent = 'Consultar';
 }
 
+// Salida del lado publico: limpia el formulario y vuelve al login. El
+// portal tiene la suya, que ademas borra la cookie de sesion -- ver
+// cerrarSesion en sesion.js.
 export function logout() {
   setPacienteData({});
   resetSeleccion();

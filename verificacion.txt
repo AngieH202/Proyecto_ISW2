@@ -1,0 +1,13 @@
+PENDIENTE
+
+# Código de verificación del entregable — DentaAgenda
+#
+# Reemplazá la primera línea por el código que te dé el verificador.
+# Tiene que quedar sola, sin comillas ni texto alrededor: algunos
+# verificadores leen el archivo entero y lo comparan tal cual.
+#
+# El mismo valor va en la etiqueta <meta name="verificacion"> de
+# landing.html, por si el verificador lo busca en el HTML.
+#
+# Sitio:  https://www.angiehernndz.lat
+# Repo:   https://github.com/AngieH202/Proyecto_ISW2

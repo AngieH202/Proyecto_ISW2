@@ -177,3 +177,103 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .timeline-cita.atendida-c{border-left:3px solid #065f46}
 .timeline-cita.cancelada-c{border-left:3px solid #991b1b}
 .timeline-cita.nopresento-c{border-left:3px solid #6b7280}
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE
+   La app nacio con un ancho fijo de 430px: en un monitor era
+   una columna angosta en el medio de la pantalla. Estos tres
+   cortes la adaptan de verdad al ancho disponible.
+══════════════════════════════════════════════════════════ */
+
+/* ── Telefono chico: gana espacio util ── */
+@media (max-width:380px){
+  .topbar{padding:12px}
+  .topbar h1{font-size:16px}
+  .login-bg{padding:20px 14px}
+  .login-card{padding:18px;border-radius:16px}
+  .login-logo h1{font-size:22px}
+  .scroll-area{padding:12px}
+  .card{padding:12px;border-radius:12px}
+  .dias-grid{gap:4px}
+  .dia-btn{padding:8px 2px}
+  .dia-btn .dia-num{font-size:14px}
+  .horarios-grid{grid-template-columns:repeat(2,1fr);gap:6px}
+  .stats-grid{gap:8px}
+  .stat{padding:11px}
+  .stat .num{font-size:20px}
+  .nav-switch button{font-size:11px;padding:10px 2px}
+  .modal-sheet{padding:16px 13px 26px}
+}
+
+/* ── Tablet: la app respira y deja de tocar los bordes ── */
+@media (min-width:768px){
+  body{padding:24px 0}
+  .app{
+    max-width:600px;
+    min-height:calc(100vh - 48px);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 12px 40px rgba(0,119,182,.16);
+  }
+  .scroll-area{padding:22px 26px}
+  .horarios-grid{grid-template-columns:repeat(4,1fr)}
+  .stats-grid{grid-template-columns:repeat(4,1fr)}
+  .modal-sheet{
+    max-width:560px;
+    border-radius:18px;
+    margin-bottom:5vh;
+    animation:none;
+  }
+  .modal-overlay{align-items:center}
+  .tratamiento-tags{gap:8px}
+}
+
+/* ── Escritorio: el panel de la doctora usa el ancho ── */
+@media (min-width:1024px){
+  .app{max-width:940px}
+  .scroll-area{padding:26px 34px}
+  .horarios-grid{grid-template-columns:repeat(5,1fr)}
+
+  /* Agenda y expedientes en dos columnas: en un monitor, una sola
+     lista de tarjetas deja media pantalla vacia. */
+  #citas-lista,
+  #pendientes-lista,
+  #expedientes-lista,
+  #historial-lista{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+    align-items:start;
+  }
+  #citas-lista .card,
+  #pendientes-lista .card,
+  #expedientes-lista .card,
+  #historial-lista .visita-card{margin-bottom:0}
+
+  /* Los estados vacios y el "cargando" ocupan las dos columnas. */
+  #citas-lista .empty-state,     #citas-lista .loading,
+  #pendientes-lista .empty-state,#pendientes-lista .loading,
+  #expedientes-lista .empty-state,#expedientes-lista .loading,
+  #historial-lista .empty-state, #historial-lista .loading{grid-column:1 / -1}
+
+  .pac-stats{grid-template-columns:repeat(4,1fr)}
+}
+
+/* ── Respeta a quien pidio menos movimiento ── */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+}
+
+/* ── Foco visible: hace falta para navegar con teclado ── */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible{
+  outline:3px solid #03045E;
+  outline-offset:2px;
+}

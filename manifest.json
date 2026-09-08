@@ -1,27 +1,50 @@
 {
-  "name": "DentaAgenda",
+  "id": "/?app=1",
+  "name": "DentaAgenda — Citas odontológicas",
   "short_name": "DentaAgenda",
-  "description": "Sistema de citas odontológicas de la clínica Dra. Belkis Suisse.",
+  "description": "Agendá tu cita dental, seguí su estado y consultá tu historial clínico desde el celular.",
   "lang": "es",
   "dir": "ltr",
-  "start_url": "./index.html?app=1",
-  "scope": "./",
+  "start_url": "/index.html?app=1",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "portrait",
   "background_color": "#EAF4FB",
   "theme_color": "#0077B6",
+  "categories": ["health", "medical", "productivity"],
   "icons": [
     {
-      "src": "./assets/icono.svg",
-      "type": "image/svg+xml",
-      "sizes": "any",
+      "src": "/assets/icono-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
       "purpose": "any"
     },
     {
-      "src": "./assets/icono-maskable.svg",
+      "src": "/assets/icono-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icono-512-maskable.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/icono.svg",
       "type": "image/svg+xml",
       "sizes": "any",
-      "purpose": "maskable"
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Agendar una cita",
+      "short_name": "Agendar",
+      "url": "/index.html?app=1",
+      "icons": [{ "src": "/assets/icono-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

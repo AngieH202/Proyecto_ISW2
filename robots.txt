@@ -1,0 +1,14 @@
+# DentaAgenda — https://www.angiehernndz.lat
+
+User-agent: *
+Allow: /$
+Allow: /landing.html
+Allow: /index.html
+
+# El portal de la doctora y la API no se indexan. El bloqueo aquí es una
+# señal para los buscadores, no un control de acceso: quien realmente
+# impide entrar sin sesión es /api/admin.
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://www.angiehernndz.lat/sitemap.xml

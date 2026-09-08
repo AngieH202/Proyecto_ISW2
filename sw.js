@@ -4,7 +4,7 @@
 // contenido de los estaticos. Cambiarla renombra las caches, y activate
 // borra las viejas: eso es todo el mecanismo de invalidacion tras un
 // deploy.
-const VERSION = 'ebf89ca3';
+const VERSION = '1421f797';
 
 const CACHE_ESTATICOS = `dentaagenda-estaticos-${VERSION}`;
 const CACHE_DATOS = `dentaagenda-datos-${VERSION}`;
@@ -13,17 +13,25 @@ const PRECARGA = [
   './',
   './index.html',
   './landing.html',
+  './404.html',
   './manifest.json',
   './assets/icono.svg',
+  './assets/icono-192.png',
+  './assets/icono-512.png',
   './assets/css/app.css',
   './assets/js/app.js',
   './assets/js/modules/config.js',
   './assets/js/modules/cache.js',
   './assets/js/modules/api.js',
   './assets/js/modules/utils.js',
+  './assets/js/modules/sesion.js',
   './assets/js/modules/auth.js',
   './assets/js/modules/patient.js'
 ];
+
+// /admin y /api/session no se precargan ni se cachean nunca: son
+// privados y su respuesta depende de la sesion.
+const NUNCA = ['/admin', '/api/'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
@@ -57,6 +65,10 @@ self.addEventListener('fetch', (e) => {
 
   // El login de la doctora nunca pasa por cache.
   if (url.pathname.includes('/auth/v1/')) return;
+
+  // Rutas privadas: siempre a la red. Cachear /admin dejaria el panel
+  // servido desde el disco despues de cerrar sesion.
+  if (NUNCA.some((p) => url.pathname.startsWith(p))) return;
 
   // La aplicacion marca asi las lecturas de las que depende una escritura
   // (ver sbGet con cache:false en assets/js/modules/api.js). Dejarlas

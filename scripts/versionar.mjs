@@ -22,10 +22,12 @@ const ruta = (r) => join(raiz, r);
 const SELLADOS = [
   'assets/css/app.css',
   'assets/js/app.js',
+  'assets/js/admin.js',
   'assets/js/modules/config.js',
   'assets/js/modules/cache.js',
   'assets/js/modules/api.js',
   'assets/js/modules/utils.js',
+  'assets/js/modules/sesion.js',
   'assets/js/modules/auth.js',
   'assets/js/modules/patient.js'
 ];
@@ -54,6 +56,10 @@ reescribir('index.html', /(assets\/js\/app\.js\?v=)[^"']*/g, `$1${version}`);
 // La VERSION del service worker nombra sus caches; cambiarla hace que
 // activate borre las viejas.
 reescribir('sw.js', /(const VERSION = ')[^']*(')/, `$1${version}$2`);
+
+// El healthcheck reporta la version desplegada: sirve para saber, desde
+// afuera, si Vercel ya publico el ultimo commit.
+reescribir('api/health.js', /(const VERSION = ')[^']*(')/, `$1${version}$2`);
 
 console.log(`\nversion: ${version}`);
 console.log(cambios ? `${cambios} archivo(s) modificados.` : 'Ya estaba al dia, no se toco nada.');
