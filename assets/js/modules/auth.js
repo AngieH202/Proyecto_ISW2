@@ -1,4 +1,4 @@
-import { sbGet, sbUpsert, authLogin } from './api.js';
+import { sbRpc, authLogin } from './api.js';
 import { hideError, showError, showScreen, labelEstado } from './utils.js';
 import { renderDias, setPaso, setPacienteData, resetSeleccion } from './patient.js';
 import { DOCTORA_USUARIO, DOCTORA_EMAIL } from './config.js';
@@ -66,21 +66,19 @@ export async function loginPaciente() {
   btn.textContent = 'Cargando...';
   hideError();
 
-  // Un solo viaje en vez de leer y despues escribir: la unicidad de
-  // identidad la resuelve Postgres, asi que dos pestanas a la vez ya no
-  // crean dos fichas del mismo paciente.
+  // Por RPC y no contra la tabla: 011_rls_endurecido.sql le quita a anon
+  // el acceso directo a expedientes.
   //
-  // Se mandan solo los datos que el paciente escribe. visitas,
-  // ultima_visita y notas quedan fuera a proposito: merge-duplicates
-  // actualiza lo que se manda, e incluirlas le borraria el historial a
-  // un paciente que vuelve. Las tres tienen default en el esquema, asi
-  // que al crear la ficha se llenan igual.
-  const alta = await sbUpsert('expedientes', {
-    nombre,
-    identidad: id,
-    edad: parseInt(edad),
-    telefono: tel
-  }, 'identidad');
+  // La funcion mantiene el upsert idempotente sobre identidad -- un solo
+  // viaje, sin la carrera que deja leer y despues escribir -- y solo toca
+  // los datos que el paciente escribe. visitas y ultima_visita quedan
+  // fuera a proposito: pisarlas le borraria el historial a quien vuelve.
+  const alta = await sbRpc('registrar_paciente', {
+    p_nombre: nombre,
+    p_identidad: id,
+    p_edad: parseInt(edad),
+    p_telefono: tel
+  });
 
   if (!alta.ok) {
     showError('No pudimos guardar tus datos. Revisá tu conexión.');
@@ -116,24 +114,29 @@ export async function consultarEstado() {
   btn.textContent = 'Consultando...';
   hideError();
 
-  const expediente = await sbGet('expedientes', `identidad=eq.${encodeURIComponent(id)}`);
-  if (!expediente.length) {
+  // Una sola RPC en lugar de dos lecturas de tabla. La funcion resuelve
+  // el cruce del lado de la base y devuelve solo las citas de esa
+  // identidad, sin exponer expedientes ni citas de nadie mas.
+  const consulta = await sbRpc('estado_de_mis_citas', { p_identidad: id });
+  const citas = Array.isArray(consulta.data) ? consulta.data : [];
+
+  if (!consulta.ok) {
+    showError('No pudimos consultar tus citas. Revisá tu conexión.');
+    btn.disabled = false;
+    btn.textContent = 'Consultar';
+    return;
+  }
+
+  if (!citas.length) {
     showError('No encontramos citas con ese número de identidad.');
     btn.disabled = false;
     btn.textContent = 'Consultar';
     return;
   }
 
-  const nombre = expediente[0].nombre;
-  const citas = await sbGet('citas', `nombre_paciente=eq.${encodeURIComponent(nombre)}&order=created_at.desc`);
+  const nombre = citas[0].nombre_paciente;
   showScreen('estado');
   const el = document.getElementById('estado-resultado');
-  if (!citas.length) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>No tenés citas registradas</p></div>';
-    btn.disabled = false;
-    btn.textContent = 'Consultar';
-    return;
-  }
 
   const colores = {
     pendiente: { bg: '#fff3cd', color: '#856404', icon: '⏳', msg: 'Tu cita está pendiente de confirmación por la doctora.' },

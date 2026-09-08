@@ -1,4 +1,4 @@
-import { sbGet, sbPost } from './api.js';
+import { sbRpc } from './api.js';
 import { SLOTS_BASE, DIAS_NOMBRES, MESES } from './config.js';
 import { notif, showError } from './utils.js';
 
@@ -127,14 +127,15 @@ export async function cargarSlotsDia() {
   const target = document.getElementById('horarios-grid');
   if (target) target.innerHTML = '<div class="loading">Cargando horarios...</div>';
 
+  // Por RPC: anon ya no lee la tabla citas. La funcion devuelve solo las
+  // horas tomadas de ese dia, sin decir de quien es cada una.
+  //
   // Sin cache: mostrar como libre un horario que otro acaba de tomar es
   // el peor error posible en esta pantalla.
-  const ocupadas = await sbGet(
-    'citas',
-    `estado=neq.cancelada&fecha=eq.${diaSel.key}&select=hora`,
-    { cache: false }
+  const ocupadas = await sbRpc('slots_ocupados', { p_fecha: diaSel.key });
+  const horasOcupadas = new Set(
+    (Array.isArray(ocupadas.data) ? ocupadas.data : []).map((c) => c.hora)
   );
-  const horasOcupadas = new Set((ocupadas || []).map((c) => c.hora));
 
   const ahora = new Date();
   const esHoy = diaSel.key === formatoFechaKey(ahora);
@@ -239,67 +240,28 @@ export async function enviarSolicitud() {
     setPaso(4);
   };
 
-  // Una sola consulta por el horario, y la decision se toma en JS. Se
-  // evita a proposito un or=() de PostgREST: ahi los valores van dentro
-  // de la expresion y una coma en un nombre rompe el filtro.
-  // Sin cache: de esta lectura depende si se crea o no una fila. Una
-  // respuesta vieja dejaria pasar un duplicado.
-  const enEseSlot = await sbGet(
-    'citas',
-    `fecha=eq.${encodeURIComponent(diaSel.key)}` +
-    `&hora=eq.${encodeURIComponent(hora)}` +
-    '&estado=neq.cancelada&select=id,identidad,nombre_paciente',
-    { cache: false }
-  );
-  const ocupantes = Array.isArray(enEseSlot) ? enEseSlot : [];
-
-  // Propia si coincide la identidad, que es unica. El nombre solo sirve
-  // de respaldo para las citas viejas, creadas antes de que se guardara
-  // identidad: comparar por nombre a secas le mostraria a un homonimo la
-  // confirmacion de una cita ajena.
-  const esPropia = ocupantes.some((c) => (
-    c.identidad
-      ? c.identidad === pacienteData.id
-      : c.nombre_paciente === pacienteData.nombre
-  ));
-
-  // Ya entro: un reintento tras un timeout, o el boton de atras. Se
-  // muestra la confirmacion en vez de crear una segunda cita identica.
-  if (esPropia) {
-    mostrarConfirmacion();
-    btn.disabled = false;
-    btn.textContent = 'Enviar solicitud';
-    return;
-  }
-
-  // El horario es de otra persona. Se corta antes de intentar el insert,
-  // sin depender de que el indice unico de 006 este puesto.
-  if (ocupantes.length) {
-    notif('Ese horario acaba de ocuparse. Elegí otro.');
-    await cargarSlotsDia();
-    setPaso(2);
-    btn.disabled = false;
-    btn.textContent = 'Enviar solicitud';
-    return;
-  }
-
-  const { ok, status } = await sbPost('citas', {
-    nombre_paciente: pacienteData.nombre,
-    // La columna ya existia sin usarse. Mandarla da una clave de cruce
-    // fiable contra expedientes, en vez del nombre escrito a mano.
-    identidad: pacienteData.id,
-    telefono_paciente: pacienteData.tel,
-    fecha: diaSel.key,
-    hora,
-    motivo,
-    estado: 'pendiente'
+  // Una sola llamada: la funcion comprueba el horario e inserta dentro de
+  // la misma sentencia. Antes eran dos peticiones HTTP, y entre una y
+  // otra quedaba una ventana en la que otro paciente podia tomar el slot.
+  //
+  // Distingue de quien es la cita por identidad, que es unica. El nombre
+  // solo se usa de respaldo para las citas viejas, creadas antes de que
+  // se guardara identidad: comparar por nombre a secas le mostraria a un
+  // homonimo la confirmacion de una cita ajena.
+  const r = await sbRpc('crear_solicitud', {
+    p_identidad: pacienteData.id,
+    p_nombre: pacienteData.nombre,
+    p_telefono: pacienteData.tel,
+    p_fecha: diaSel.key,
+    p_hora: hora,
+    p_motivo: motivo
   });
 
-  if (ok) {
+  // 'creada' o 'ya_existia' terminan igual: la cita del paciente esta
+  // puesta. Esa equivalencia es lo que vuelve seguro el reintento.
+  if (r.ok && (r.data === 'creada' || r.data === 'ya_existia')) {
     mostrarConfirmacion();
-  } else if (status === 409) {
-    // Choca contra el indice unico de 006: alguien reservo ese horario
-    // entre que se eligio y se confirmo.
+  } else if (r.ok && r.data === 'ocupado') {
     notif('Ese horario acaba de ocuparse. Elegí otro.');
     await cargarSlotsDia();
     setPaso(2);
