@@ -23,7 +23,7 @@ export async function cerrarSesion() {
   } catch {
     // Si la red falla igual se sale: la cookie vence sola.
   }
-  window.location.href = '/index.html?app=1';
+  window.location.href = '/login';
 }
 
 export async function haySesion() {

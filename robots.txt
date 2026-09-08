@@ -3,6 +3,7 @@
 User-agent: *
 Allow: /$
 Allow: /landing.html
+Allow: /login
 Allow: /index.html
 
 # El portal de la doctora y la API no se indexan. El bloqueo aquí es una

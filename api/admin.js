@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   const usuario = await validar(leerCookie(req, COOKIE));
 
   if (!usuario) {
-    res.setHeader('Location', '/index.html?app=1&desde=admin');
+    res.setHeader('Location', '/login?desde=admin');
     return res.status(302).end();
   }
 

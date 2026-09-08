@@ -91,7 +91,7 @@ sw.status === 200 && /addEventListener\(['"]fetch/.test(sw.cuerpo)
   : mal('PWA', 'service worker con handler de fetch', `dio ${sw.status}`);
 
 // ── 5. SEO y Open Graph ──────────────────────────────────────────────
-const paginas = { '/': raiz, '/index.html?app=1': await traer('/index.html?app=1') };
+const paginas = { '/': raiz, '/login': await traer('/login') };
 for (const [ruta, p] of Object.entries(paginas)) {
   const meta = (re) => re.test(p.cuerpo);
   meta(/<title>[^<]{10,}<\/title>/) ? ok('SEO', `title en ${ruta}`) : mal('SEO', `title en ${ruta}`);
@@ -125,7 +125,7 @@ fugaAdmin.length === 0
   ? ok('Privado', '/admin no filtra marcado privado')
   : mal('Privado', '/admin no filtra marcado privado', fugaAdmin.join(', '));
 
-const login = paginas['/index.html?app=1'];
+const login = paginas['/login'];
 const fugaLogin = FUGAS.filter((f) => login.cuerpo.includes(f));
 fugaLogin.length === 0
   ? ok('Privado', 'el login no filtra marcado privado')

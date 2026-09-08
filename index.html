@@ -12,15 +12,15 @@
     var isApp = params.get('app') === '1';
     var isRootPage = window.location.pathname === '/' || window.location.pathname.endsWith('/index.html');
     if (isRootPage && !isApp) {
-      window.location.replace('landing.html');
+      window.location.replace('/landing.html');
     }
   })();
 </script>
-<link rel="stylesheet" href="assets/css/app.css?v=1421f797">
+<link rel="stylesheet" href="/assets/css/app.css?v=97fededc">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/assets/icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/icono-192.png">
-<link rel="canonical" href="https://www.angiehernndz.lat/index.html?app=1">
+<link rel="canonical" href="https://www.angiehernndz.lat/login">
 
 <title>Agendá tu cita — DentaAgenda</title>
 <meta name="description" content="Ingresá a DentaAgenda para solicitar tu cita odontológica, elegir día y horario, y consultar el estado de tu solicitud con tu número de identidad.">
@@ -32,7 +32,7 @@
 <meta property="og:locale" content="es_HN">
 <meta property="og:title" content="Agendá tu cita — DentaAgenda">
 <meta property="og:description" content="Solicitá tu cita odontológica, elegí día y horario, y consultá el estado de tu solicitud con tu número de identidad.">
-<meta property="og:url" content="https://www.angiehernndz.lat/index.html?app=1">
+<meta property="og:url" content="https://www.angiehernndz.lat/login">
 <meta property="og:image" content="https://www.angiehernndz.lat/assets/img/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -184,7 +184,7 @@
 
 </div>
 
-  <script type="module" src="assets/js/app.js?v=1421f797"></script>
+  <script type="module" src="/assets/js/app.js?v=97fededc"></script>
 
   <script>
     // El service worker solo se registra sobre HTTPS o localhost; en
@@ -192,7 +192,7 @@
     // landing: el alcance './' ya la cubre desde aca.
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {
+        navigator.serviceWorker.register('/sw.js', { scope: './' }).catch(() => {
           // Sin service worker la app funciona igual, solo sin offline.
         });
       });
