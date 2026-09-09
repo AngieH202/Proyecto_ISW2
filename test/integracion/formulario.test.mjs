@@ -7,83 +7,10 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { instalarDom, instalarBaseFalsa, MODULOS } from '../entorno.mjs';
 
-// ── DOM mínimo ────────────────────────────────────────────────────────
-// Los módulos publican sus handlers en window al cargarse, así que esto
-// tiene que quedar montado ANTES de importarlos.
-const campos = new Map();
-
-function nuevoElemento(id) {
-  const clases = new Set();
-  return {
-    id, value: '', textContent: '', innerHTML: '', disabled: false, style: {},
-    classList: {
-      add: (c) => clases.add(c),
-      remove: (c) => clases.delete(c),
-      toggle: (c, forzar) => ((forzar ?? !clases.has(c)) ? clases.add(c) : clases.delete(c)),
-      contains: (c) => clases.has(c)
-    },
-    querySelector: () => nuevoElemento('interno'),
-    querySelectorAll: () => [],
-    nextElementSibling: null
-  };
-}
-
-globalThis.document = {
-  getElementById(id) {
-    if (!campos.has(id)) campos.set(id, nuevoElemento(id));
-    return campos.get(id);
-  },
-  querySelectorAll: () => [],
-  querySelector: () => nuevoElemento('interno')
-};
-globalThis.window = globalThis;
-globalThis.location = { pathname: '/login', search: '?app=1', href: '', replace() {} };
-
-const el = (id) => globalThis.document.getElementById(id);
-const escribir = (id, valor) => { el(id).value = valor; };
-
-// ── Las RPC que puede llamar esta pantalla ────────────────────────────
-const db = { expedientes: [], citas: [] };
-const peticiones = [];
-let seq = 1;
-
-const RPC = {
-  registrar_paciente({ p_nombre, p_identidad, p_edad, p_telefono }) {
-    if (!p_nombre?.trim() || !p_identidad?.trim()) throw new Error('nombre e identidad son obligatorios');
-    let e = db.expedientes.find((x) => x.identidad === p_identidad);
-    if (e) Object.assign(e, { nombre: p_nombre, edad: p_edad, telefono: p_telefono });
-    else {
-      e = { id: 'exp-' + seq++, nombre: p_nombre, identidad: p_identidad, edad: p_edad, telefono: p_telefono, visitas: 0, ultima_visita: '—' };
-      db.expedientes.push(e);
-    }
-    return e.id;
-  },
-
-  estado_de_mis_citas({ p_identidad }) {
-    const e = db.expedientes.find((x) => x.identidad === p_identidad);
-    if (!e) return [];
-    return db.citas.filter((c) => c.identidad === p_identidad);
-  }
-};
-
-globalThis.fetch = async (url, opts = {}) => {
-  const u = new URL(String(url), 'https://falso.local');
-  const cuerpo = opts.body ? JSON.parse(opts.body) : {};
-  const funcion = u.pathname.split('/rpc/')[1];
-  peticiones.push({ funcion, cuerpo });
-
-  const responder = (status, data) => ({ ok: status < 300, status, json: async () => data });
-  const fn = RPC[funcion];
-  if (!fn) return responder(404, { message: 'función inexistente' });
-  try {
-    return responder(200, fn(cuerpo));
-  } catch (e) {
-    return responder(400, { message: String(e.message) });
-  }
-};
-
-const MODULOS = new URL('../../assets/js/', import.meta.url).href;
+const { el, escribir } = instalarDom();
+const { db, peticiones } = instalarBaseFalsa();
 
 await import(MODULOS + 'app.js');
 

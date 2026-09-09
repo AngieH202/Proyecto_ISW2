@@ -8,43 +8,13 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { instalarDom, MODULOS } from '../entorno.mjs';
 
-// ── DOM mínimo ────────────────────────────────────────────────────────
-// Los módulos publican sus handlers en window al cargarse, así que esto
-// tiene que quedar montado ANTES de importarlos.
-const campos = new Map();
-
-function nuevoElemento(id) {
-  const clases = new Set();
-  return {
-    id, value: '', textContent: '', innerHTML: '', disabled: false, style: {},
-    classList: {
-      add: (c) => clases.add(c),
-      remove: (c) => clases.delete(c),
-      toggle: (c, forzar) => ((forzar ?? !clases.has(c)) ? clases.add(c) : clases.delete(c)),
-      contains: (c) => clases.has(c)
-    },
-    querySelector: () => nuevoElemento('interno'),
-    querySelectorAll: () => [],
-    nextElementSibling: null
-  };
-}
-
-globalThis.document = {
-  getElementById(id) {
-    if (!campos.has(id)) campos.set(id, nuevoElemento(id));
-    return campos.get(id);
-  },
-  querySelectorAll: () => [],
-  querySelector: () => nuevoElemento('interno')
-};
-globalThis.window = globalThis;
-globalThis.location = { pathname: '/login', search: '?app=1', href: '', replace() {} };
-
-const el = (id) => globalThis.document.getElementById(id);
-const escribir = (id, valor) => { el(id).value = valor; };
+const { el, escribir } = instalarDom();
 
 // ── Supabase Auth y /api/session, falsos ──────────────────────────────
+// Acá no hace falta la base: lo que se prueba es la puerta, no lo que
+// hay adentro.
 const CLAVE_BUENA = 'la-clave-de-belkis';
 const TOKEN = 'access-token-de-la-doctora';
 
@@ -78,8 +48,6 @@ globalThis.fetch = async (url, opts = {}) => {
 
   return responder(404, null);
 };
-
-const MODULOS = new URL('../../assets/js/', import.meta.url).href;
 
 await import(MODULOS + 'app.js');
 const { cerrarSesion, haySesion } = await import(MODULOS + 'modules/sesion.js');

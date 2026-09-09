@@ -36,21 +36,32 @@ libera el slot para los demás.
 
 ## Cómo está armado cada archivo
 
-Cada test es **autocontenido**: no hay carpeta de ayudas ni dependencias. Arriba
-de cada archivo hay dos bloques y después las pruebas.
+Todo lo común vive en **`entorno.mjs`** — un archivo suelto, no una carpeta, y
+sin dependencias. Cada test empieza con dos líneas:
 
-1. **DOM mínimo.** No pretende ser un navegador: sostiene lo que la app usa de
-   verdad — `.value`, `.innerHTML`, `.textContent`, `.classList`. Tiene que
-   quedar montado **antes** de importar nada de `assets/js`, porque los módulos
-   publican sus handlers en `window` al cargarse.
-2. **Base falsa**, en el `fetch` global, con sólo lo que ese archivo necesita:
-   las RPC de `011_rls_endurecido.sql` para el paciente, y los filtros `eq`,
-   `insert` y `patch` de PostgREST más el índice único de `006` para el panel.
-   Guarda además el registro de peticiones, que es lo que permite afirmar *qué*
-   llamó el cliente —y con qué query— y no sólo en qué estado quedó la base.
+```js
+const { el, escribir, leerNotif, limpiarNotif } = instalarDom();
+const { db, peticiones } = instalarBaseFalsa();
+```
 
-Se repite algo de código entre archivos y está bien: cada uno corre en su propio
-proceso y se lee entero sin saltar a otro lado.
+1. **`instalarDom()`** monta un DOM mínimo. No pretende ser un navegador:
+   sostiene lo que la app usa de verdad — `.value`, `.innerHTML`,
+   `.textContent`, `.classList`. Tiene que quedar montado **antes** de importar
+   nada de `assets/js`, porque los módulos publican sus handlers en `window` al
+   cargarse. Devuelve los atajos para leer y escribir campos.
+2. **`instalarBaseFalsa()`** pone una base en el `fetch` global: las cuatro RPC
+   de `011_rls_endurecido.sql` con la misma semántica del SQL. Con
+   `{ tablas: true }` sirve además las tablas por PostgREST —filtros `eq` y
+   `neq`, insert, patch y el índice único parcial de `006`—, que es lo único que
+   ve el portal. Sin esa opción, pedir una tabla responde 404: eso es lo que
+   vuelve real el test de que el paciente sólo puede llamar funciones.
+
+Devuelve `db` para preparar o revisar el estado, y `peticiones`, que es lo que
+permite afirmar *qué* llamó el cliente —y con qué query— y no sólo en qué estado
+quedó la base.
+
+Lo que no se comparte queda en su archivo: el Supabase Auth falso de
+`login-doctora.test.mjs`, por ejemplo, lo usa un solo test.
 
 ## Contra el sitio en vivo
 
@@ -64,6 +75,6 @@ npm run verificar:rls     # que anon no llegue a las tablas
 ## Al agregar un test
 
 Los archivos van como `<tema>.test.mjs` en `unidad/` (funciones puras) o
-`integracion/` (flujos contra la base falsa). Lo más rápido es copiar la
-cabecera de un archivo parecido. Cada archivo corre en su propio proceso, así
-que se puede ensuciar `globalThis` sin afectar a los demás.
+`integracion/` (flujos contra la base falsa), y arrancan importando lo que
+necesiten de `../entorno.mjs`. Cada archivo corre en su propio proceso, así que
+se puede ensuciar `globalThis` sin afectar a los demás.

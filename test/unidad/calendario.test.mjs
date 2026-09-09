@@ -6,46 +6,13 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { instalarDom, instalarBaseFalsa, MODULOS } from '../entorno.mjs';
 
-// ── DOM mínimo ────────────────────────────────────────────────────────
-// Los módulos publican sus handlers en window al cargarse, así que esto
-// tiene que quedar montado ANTES de importarlos.
-const campos = new Map();
-
-function nuevoElemento(id) {
-  const clases = new Set();
-  return {
-    id, value: '', textContent: '', innerHTML: '', disabled: false, style: {},
-    classList: {
-      add: (c) => clases.add(c),
-      remove: (c) => clases.delete(c),
-      toggle: (c, forzar) => ((forzar ?? !clases.has(c)) ? clases.add(c) : clases.delete(c)),
-      contains: (c) => clases.has(c)
-    },
-    querySelector: () => nuevoElemento('interno'),
-    querySelectorAll: () => [],
-    nextElementSibling: null
-  };
-}
-
-globalThis.document = {
-  getElementById(id) {
-    if (!campos.has(id)) campos.set(id, nuevoElemento(id));
-    return campos.get(id);
-  },
-  querySelectorAll: () => [],
-  querySelector: () => nuevoElemento('interno')
-};
-globalThis.window = globalThis;
-globalThis.location = { pathname: '/login', search: '?app=1', href: '', replace() {} };
-
-const el = (id) => globalThis.document.getElementById(id);
+const { el } = instalarDom();
 
 // Estas funciones no hablan con la base, pero alguna dispara de paso un
-// refresco de horarios. Un fetch que no devuelve nada alcanza.
-globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => [] });
-
-const MODULOS = new URL('../../assets/js/', import.meta.url).href;
+// refresco de horarios.
+instalarBaseFalsa();
 
 const patient = await import(MODULOS + 'modules/patient.js');
 const {

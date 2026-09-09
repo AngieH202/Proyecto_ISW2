@@ -7,112 +7,15 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { instalarDom, instalarBaseFalsa, MODULOS } from '../entorno.mjs';
 
-// ── DOM mínimo ────────────────────────────────────────────────────────
-// admin.js publica sus handlers en window y carga la agenda al
-// importarse, así que esto tiene que quedar montado antes.
-const campos = new Map();
-
-function nuevoElemento(id) {
-  const clases = new Set();
-  return {
-    id, value: '', textContent: '', innerHTML: '', disabled: false, style: {},
-    classList: {
-      add: (c) => clases.add(c),
-      remove: (c) => clases.delete(c),
-      toggle: (c, forzar) => ((forzar ?? !clases.has(c)) ? clases.add(c) : clases.delete(c)),
-      contains: (c) => clases.has(c)
-    },
-    querySelector: () => nuevoElemento('interno'),
-    querySelectorAll: () => [],
-    nextElementSibling: null
-  };
-}
-
-globalThis.document = {
-  getElementById(id) {
-    if (!campos.has(id)) campos.set(id, nuevoElemento(id));
-    return campos.get(id);
-  },
-  querySelectorAll: () => [],
-  querySelector: () => nuevoElemento('interno')
-};
-globalThis.window = globalThis;
-globalThis.location = { pathname: '/admin', search: '', href: '', replace() {} };
-
-const el = (id) => globalThis.document.getElementById(id);
-const escribir = (id, valor) => { el(id).value = valor; };
-const leerNotif = () => el('notif').textContent;
-const limpiarNotif = () => { el('notif').textContent = ''; };
+const { el, escribir, leerNotif, limpiarNotif } = instalarDom({ pathname: '/admin', search: '' });
 
 // El proxy tiene el token; el navegador sólo tiene la cookie.
 globalThis.__sesion = { email: 'belki.den@dentaagenda.com' };
 
-// ── PostgREST falso, en memoria ───────────────────────────────────────
-// Implementa lo que el panel usa de verdad: filtros eq, insert, patch y
-// la RPC slots_ocupados, con la misma semántica del SQL.
-const db = { expedientes: [], citas: [], visitas_clinicas: [] };
-const peticiones = [];
-let seq = 1;
-
-const filtrar = (filas, params) => filas.filter((f) => {
-  for (const [k, v] of params) {
-    if (['select', 'order', 'limit'].includes(k)) continue;
-    const [op, ...resto] = v.split('.');
-    const val = resto.join('.');
-    if (op === 'eq' && String(f[k]) !== val) return false;
-    if (op === 'neq' && String(f[k]) === val) return false;
-  }
-  return true;
-});
-
-const RPC = {
-  slots_ocupados({ p_fecha }) {
-    return db.citas
-      .filter((c) => c.fecha === p_fecha && c.estado !== 'cancelada')
-      .map((c) => ({ hora: c.hora }));
-  }
-};
-
-globalThis.fetch = async (url, opts = {}) => {
-  const u = new URL(String(url), 'https://falso.local');
-  const metodo = opts.method ?? 'GET';
-  const cuerpo = opts.body ? JSON.parse(opts.body) : null;
-  peticiones.push({ ruta: u.pathname, busqueda: u.search, metodo, modoCache: opts.cache });
-
-  const responder = (status, data) => ({ ok: status < 300, status, json: async () => data });
-
-  const nombreRpc = u.pathname.match(/\/rpc\/(\w+)$/)?.[1];
-  if (nombreRpc) {
-    const fn = RPC[nombreRpc];
-    return fn ? responder(200, fn(cuerpo ?? {})) : responder(404, { code: 'PGRST202' });
-  }
-
-  const tabla = u.pathname.split('/').filter(Boolean).pop();
-  if (!db[tabla]) return responder(404, { message: 'tabla inexistente' });
-  const params = [...u.searchParams.entries()];
-
-  if (metodo === 'GET') return responder(200, filtrar(db[tabla], params));
-
-  if (metodo === 'POST') {
-    // Índice único parcial de 006: (fecha, hora) entre las no canceladas.
-    if (tabla === 'citas' && db.citas.some((c) => c.fecha === cuerpo.fecha && c.hora === cuerpo.hora && c.estado !== 'cancelada')) {
-      return responder(409, { code: '23505', message: 'duplicate key' });
-    }
-    const fila = { id: seq++, ...cuerpo };
-    db[tabla].push(fila);
-    return responder(201, [fila]);
-  }
-
-  if (metodo === 'PATCH') {
-    for (const f of filtrar(db[tabla], params)) Object.assign(f, cuerpo);
-    return responder(204, null);
-  }
-
-  return responder(405, null);
-};
-
-const MODULOS = new URL('../../assets/js/', import.meta.url).href;
+// Con tablas: es lo único que ve el portal, y las pide por /api/db.
+const { db, peticiones } = instalarBaseFalsa({ tablas: true });
 
 // El día que abre la agenda: hoy, o el próximo hábil si cae fin de semana.
 const diaDeAgenda = () => {

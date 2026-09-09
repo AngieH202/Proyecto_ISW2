@@ -12,109 +12,12 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { instalarDom, instalarBaseFalsa, MODULOS } from '../entorno.mjs';
 
-// ── DOM mínimo ────────────────────────────────────────────────────────
-// Los módulos publican sus handlers en window al cargarse, así que esto
-// tiene que quedar montado ANTES de importarlos.
-const campos = new Map();
+const { el, escribir, leerNotif, limpiarNotif } = instalarDom();
 
-function nuevoElemento(id) {
-  const clases = new Set();
-  return {
-    id, value: '', textContent: '', innerHTML: '', disabled: false, style: {},
-    classList: {
-      add: (c) => clases.add(c),
-      remove: (c) => clases.delete(c),
-      toggle: (c, forzar) => ((forzar ?? !clases.has(c)) ? clases.add(c) : clases.delete(c)),
-      contains: (c) => clases.has(c)
-    },
-    querySelector: () => nuevoElemento('interno'),
-    querySelectorAll: () => [],
-    nextElementSibling: null
-  };
-}
-
-globalThis.document = {
-  getElementById(id) {
-    if (!campos.has(id)) campos.set(id, nuevoElemento(id));
-    return campos.get(id);
-  },
-  querySelectorAll: () => [],
-  querySelector: () => nuevoElemento('interno')
-};
-globalThis.window = globalThis;
-globalThis.location = { pathname: '/login', search: '?app=1', href: '', replace() {} };
-
-const el = (id) => globalThis.document.getElementById(id);
-const escribir = (id, valor) => { el(id).value = valor; };
-const leerNotif = () => el('notif').textContent;
-const limpiarNotif = () => { el('notif').textContent = ''; };
-
-// ── Las RPC de 011_rls_endurecido.sql, con su misma semántica ─────────
-// El paciente no toca ninguna tabla: anon sólo puede llamar funciones.
-const db = { expedientes: [], citas: [] };
-const peticiones = [];
-let seq = 1;
-
-const RPC = {
-  registrar_paciente({ p_nombre, p_identidad, p_edad, p_telefono }) {
-    if (!p_nombre?.trim() || !p_identidad?.trim()) throw new Error('nombre e identidad son obligatorios');
-    let e = db.expedientes.find((x) => x.identidad === p_identidad);
-    if (e) {
-      // No toca visitas ni ultima_visita: pisarlas borraría el historial.
-      Object.assign(e, { nombre: p_nombre, edad: p_edad, telefono: p_telefono });
-    } else {
-      e = { id: 'exp-' + seq++, nombre: p_nombre, identidad: p_identidad, edad: p_edad, telefono: p_telefono, visitas: 0, ultima_visita: '—' };
-      db.expedientes.push(e);
-    }
-    return e.id;
-  },
-
-  // Devuelve sólo las horas tomadas, sin decir de quién es cada una.
-  slots_ocupados({ p_fecha }) {
-    return db.citas
-      .filter((c) => c.fecha === p_fecha && c.estado !== 'cancelada')
-      .map((c) => ({ hora: c.hora }));
-  },
-
-  // Comprueba el horario e inserta dentro de la misma sentencia: entre
-  // una cosa y otra no queda ventana para que se cuele otro paciente.
-  crear_solicitud({ p_identidad, p_nombre, p_telefono, p_fecha, p_hora, p_motivo }) {
-    const ocupante = db.citas.find((c) => c.fecha === p_fecha && c.hora === p_hora && c.estado !== 'cancelada');
-    if (ocupante) {
-      const propia = ocupante.identidad
-        ? ocupante.identidad === p_identidad
-        : ocupante.nombre_paciente === p_nombre;
-      return propia ? 'ya_existia' : 'ocupado';
-    }
-    db.citas.push({
-      id: seq++, nombre_paciente: p_nombre, identidad: p_identidad,
-      telefono_paciente: p_telefono, fecha: p_fecha, hora: p_hora,
-      motivo: p_motivo, estado: 'pendiente', created_at: new Date().toISOString()
-    });
-    return 'creada';
-  }
-};
-
-globalThis.fetch = async (url, opts = {}) => {
-  const u = new URL(String(url), 'https://falso.local');
-  const cuerpo = opts.body ? JSON.parse(opts.body) : {};
-  peticiones.push({ ruta: u.pathname, modoCache: opts.cache });
-
-  const responder = (status, data) => ({ ok: status < 300, status, json: async () => data });
-
-  const nombreRpc = u.pathname.match(/\/rpc\/(\w+)$/)?.[1];
-  if (!nombreRpc) return responder(404, { message: 'el paciente no puede tocar tablas' });
-  const fn = RPC[nombreRpc];
-  if (!fn) return responder(404, { code: 'PGRST202', message: 'función inexistente' });
-  try {
-    return responder(200, fn(cuerpo));
-  } catch (e) {
-    return responder(400, { message: String(e.message) });
-  }
-};
-
-const MODULOS = new URL('../../assets/js/', import.meta.url).href;
+// Sin tablas: el paciente no puede tocarlas, sólo llamar funciones.
+const { db, peticiones } = instalarBaseFalsa();
 
 await import(MODULOS + 'app.js');
 const patient = await import(MODULOS + 'modules/patient.js');
@@ -278,9 +181,8 @@ describe('el paciente nunca toca las tablas', () => {
   });
 
   test('y son sólo las tres que necesita', () => {
-    const llamadas = peticiones.map((p) => p.ruta.split('/rpc/')[1]);
     assert.deepEqual(
-      [...new Set(llamadas)].sort(),
+      [...new Set(peticiones.map((p) => p.funcion))].sort(),
       ['crear_solicitud', 'registrar_paciente', 'slots_ocupados']
     );
   });

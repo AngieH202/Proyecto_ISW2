@@ -7,62 +7,11 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { instalarDom, instalarBaseFalsa, MODULOS } from '../entorno.mjs';
 
-// ── DOM mínimo ────────────────────────────────────────────────────────
-// Los módulos publican sus handlers en window al cargarse, así que esto
-// tiene que quedar montado ANTES de importarlos.
-const campos = new Map();
-
-function nuevoElemento(id) {
-  const clases = new Set();
-  return {
-    id, value: '', textContent: '', innerHTML: '', disabled: false, style: {},
-    classList: {
-      add: (c) => clases.add(c),
-      remove: (c) => clases.delete(c),
-      toggle: (c, forzar) => ((forzar ?? !clases.has(c)) ? clases.add(c) : clases.delete(c)),
-      contains: (c) => clases.has(c)
-    },
-    querySelector: () => nuevoElemento('interno'),
-    querySelectorAll: () => [],
-    nextElementSibling: null
-  };
-}
-
-globalThis.document = {
-  getElementById(id) {
-    if (!campos.has(id)) campos.set(id, nuevoElemento(id));
-    return campos.get(id);
-  },
-  querySelectorAll: () => [],
-  querySelector: () => nuevoElemento('interno')
-};
-globalThis.window = globalThis;
-globalThis.location = { pathname: '/login', search: '?app=1', href: '', replace() {} };
-
-const el = (id) => globalThis.document.getElementById(id);
-const escribir = (id, valor) => { el(id).value = valor; };
-
-// ── La única RPC que usa esta pantalla ────────────────────────────────
-// Devuelve las horas tomadas del día, sin decir de quién es cada una.
-const citas = [];
-const peticiones = [];
-
-globalThis.fetch = async (url, opts = {}) => {
-  const u = new URL(String(url), 'https://falso.local');
-  const cuerpo = opts.body ? JSON.parse(opts.body) : {};
-  const funcion = u.pathname.split('/rpc/')[1];
-  peticiones.push({ funcion, cuerpo });
-
-  const responder = (status, data) => ({ ok: status < 300, status, json: async () => data });
-
-  if (funcion !== 'slots_ocupados') return responder(404, { message: 'función inexistente' });
-  return responder(200, citas
-    .filter((c) => c.fecha === cuerpo.p_fecha && c.estado !== 'cancelada')
-    .map((c) => ({ hora: c.hora })));
-};
-
-const MODULOS = new URL('../../assets/js/', import.meta.url).href;
+const { el, escribir } = instalarDom();
+const { db, peticiones } = instalarBaseFalsa();
+const citas = db.citas;
 
 await import(MODULOS + 'app.js');
 const patient = await import(MODULOS + 'modules/patient.js');
