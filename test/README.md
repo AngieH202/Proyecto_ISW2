@@ -20,9 +20,13 @@ funciones que llama el HTML.
 | Archivo | Funciones | Qué cuida |
 | --- | --- | --- |
 | `unidad/calendario.test.mjs` | `obtenerDiasSemana`, `formatoFechaKey`, `formatoFechaLabel`, `esPasado`, `cambiarSemana`, `selDia`, `labelEstado`, `iniciales` | Que el paciente vea los días hábiles correctos y mande una fecha que la base entienda |
+| `unidad/cache.test.mjs` | `clave`, `leer`, `guardar`, `invalidar`, `limpiar`, `estado` | Que una escritura tire lo que quedó viejo, incluida la lista de expedientes cuando se guarda una visita |
 | `integracion/doble-reserva.test.mjs` | `loginPaciente`, `enviarSolicitud`, `cargarSlotsDia` | **Dos personas no pueden agendar el mismo horario** |
+| `integracion/formulario.test.mjs` | `loginPaciente`, `consultarEstado` | Que no pase un registro con un campo vacío, campo por campo |
+| `integracion/horarios.test.mjs` | `irPaso1`, `irPaso2`, `irPaso3`, `cargarSlotsDia`, `enviarSolicitud` | Qué se puede pulsar: sin día no se avanza, y las horas tomadas o ya pasadas quedan bloqueadas |
 | `integracion/paciente.test.mjs` | `loginPaciente`, `consultarEstado` | Alta sin duplicar expedientes y consulta que no filtra citas ajenas |
 | `integracion/doctora.test.mjs` | `cargarCitas`, `cargarPendientes`, `accionPendiente`, `marcarAtendida`, `cambiarEstado`, `guardarDiagnostico`, `abrirExpediente`, `filtrarExpedientes` | El panel: confirmar, rechazar, atender y registrar la visita sin duplicarla |
+| `integracion/login-doctora.test.mjs` | `loginDoctora`, `abrirSesion`, `cerrarSesion`, `haySesion` | La puerta del portal: sin credenciales buenas no se entra, y el token se cambia por una cookie en vez de quedarse en el navegador |
 
 El caso central es `doble-reserva`: si dos pacientes agendan la misma fecha y
 hora, la doctora tiene dos personas en la puerta a las 10:00 y ya no hay forma
