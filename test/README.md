@@ -4,61 +4,62 @@ Runner nativo de Node (`node:test`). **Sin dependencias**, como el resto del
 proyecto.
 
 ```bash
-npm test                  # todo lo que no toca la red
+npm test                  # todo
 npm run test:unidad
 npm run test:integracion
-npm run test:estructura
 ```
 
 En Windows la forma `node --test test/unidad` falla; hay que pasar un glob, y
 por eso los scripts de `package.json` los usan.
 
-## Cómo está dividido
+## Qué se prueba
 
-| Carpeta | Qué prueba | Toca la red |
+Funciones de la app, no invariantes del repo. Cada archivo llama a las mismas
+funciones que llama el HTML.
+
+| Archivo | Funciones | Qué cuida |
 | --- | --- | --- |
-| `unidad/` | Funciones puras: caché, formato, fechas | No |
-| `integracion/` | Flujos completos contra un PostgREST falso | No |
-| `estructura/` | Invariantes del repo: aislamiento, PWA, SQL | No |
+| `unidad/calendario.test.mjs` | `obtenerDiasSemana`, `formatoFechaKey`, `formatoFechaLabel`, `esPasado`, `cambiarSemana`, `selDia`, `labelEstado`, `iniciales` | Que el paciente vea los días hábiles correctos y mande una fecha que la base entienda |
+| `integracion/doble-reserva.test.mjs` | `loginPaciente`, `enviarSolicitud`, `cargarSlotsDia` | **Dos personas no pueden agendar el mismo horario** |
+| `integracion/paciente.test.mjs` | `loginPaciente`, `consultarEstado` | Alta sin duplicar expedientes y consulta que no filtra citas ajenas |
+| `integracion/doctora.test.mjs` | `cargarCitas`, `cargarPendientes`, `accionPendiente`, `marcarAtendida`, `cambiarEstado`, `guardarDiagnostico`, `abrirExpediente`, `filtrarExpedientes` | El panel: confirmar, rechazar, atender y registrar la visita sin duplicarla |
 
-Las comprobaciones **contra el sitio en vivo** están aparte, en `scripts/`,
-porque son herramientas que se corren a mano contra producción:
+El caso central es `doble-reserva`: si dos pacientes agendan la misma fecha y
+hora, la doctora tiene dos personas en la puerta a las 10:00 y ya no hay forma
+de arreglarlo. Se prueba de las dos puntas — el paciente que llega segundo
+recibe `ocupado` y vuelve al paso de horarios, y la cita que la doctora rechaza
+libera el slot para los demás.
+
+## Cómo está armado cada archivo
+
+Cada test es **autocontenido**: no hay carpeta de ayudas ni dependencias. Arriba
+de cada archivo hay dos bloques y después las pruebas.
+
+1. **DOM mínimo.** No pretende ser un navegador: sostiene lo que la app usa de
+   verdad — `.value`, `.innerHTML`, `.textContent`, `.classList`. Tiene que
+   quedar montado **antes** de importar nada de `assets/js`, porque los módulos
+   publican sus handlers en `window` al cargarse.
+2. **Base falsa**, en el `fetch` global, con sólo lo que ese archivo necesita:
+   las RPC de `011_rls_endurecido.sql` para el paciente, y los filtros `eq`,
+   `insert` y `patch` de PostgREST más el índice único de `006` para el panel.
+   Guarda además el registro de peticiones, que es lo que permite afirmar *qué*
+   llamó el cliente —y con qué query— y no sólo en qué estado quedó la base.
+
+Se repite algo de código entre archivos y está bien: cada uno corre en su propio
+proceso y se lee entero sin saltar a otro lado.
+
+## Contra el sitio en vivo
+
+Están aparte, en `scripts/`, porque se corren a mano contra producción:
 
 ```bash
-npm run verificar:sitio   # los 64 checks del entregable
+npm run verificar:sitio   # los checks del entregable
 npm run verificar:rls     # que anon no llegue a las tablas
 ```
 
-## Las ayudas
-
-`ayudas/dom.mjs` monta un DOM mínimo. Hay que instalarlo **antes** de importar
-nada de `assets/js`: los módulos publican sus handlers en `window` al cargarse.
-
-`ayudas/postgrest.mjs` es un PostgREST en memoria. Implementa filtros `eq` y
-`neq`, upsert con `merge-duplicates`, el índice único parcial de `006` y las
-cuatro funciones RPC de `011` con la misma semántica del SQL. Devuelve además
-el registro de peticiones, que es lo que permite afirmar *qué* llamó el cliente
-y no sólo en qué estado quedó la base.
-
-## Qué se está cuidando
-
-Los tests de `estructura/` no miran comportamiento sino invariantes que, si se
-rompen, no fallan de forma visible:
-
-- **`index.html` no lleva nada del portal.** Se sirve sin sesión. Si alguien
-  vuelve a meter el panel ahí, el marcado privado se filtra otra vez.
-- **El lado público no toca ninguna tabla.** `011` le quita a `anon` el acceso
-  directo; una llamada a `sbGet` en `auth.js` o `patient.js` rompería el flujo
-  del paciente en producción.
-- **Las lecturas críticas no se cachean.** De cuatro de ellas depende si se
-  escribe o no: servir una respuesta vieja dejaría pasar un duplicado.
-- **`api/admin.js` no manda el token al navegador.** La cookie es HttpOnly
-  porque la app arma HTML con `innerHTML` a partir de nombres y diagnósticos.
-- **Los scripts SQL son re-ejecutables.** `if not exists`, `or replace`, y el
-  par `drop constraint` + `add constraint`.
-
 ## Al agregar un test
 
-Los archivos van como `<tema>.test.mjs` en la carpeta que corresponda. Cada
-archivo corre en su propio proceso, así que se puede ensuciar `globalThis` sin
-afectar a los demás.
+Los archivos van como `<tema>.test.mjs` en `unidad/` (funciones puras) o
+`integracion/` (flujos contra la base falsa). Lo más rápido es copiar la
+cabecera de un archivo parecido. Cada archivo corre en su propio proceso, así
+que se puede ensuciar `globalThis` sin afectar a los demás.
