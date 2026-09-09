@@ -20,6 +20,14 @@ jobs:
         with:
           node-version: 24
 
-      - run: npm install
+      # npm ci en vez de npm install: instala exactamente las versiones
+      # del package-lock.json, asi que el CI corre siempre contra lo
+      # mismo y nadie puede colar una version nueva sin que se vea en el
+      # diff del lock.
+      #
+      # --ignore-scripts corta los hooks de instalacion (preinstall,
+      # postinstall). Son codigo arbitrario de terceros y aca no hacen
+      # falta: ninguna dependencia del proyecto necesita compilar nada.
+      - run: npm ci --ignore-scripts
 
       - run: npm test

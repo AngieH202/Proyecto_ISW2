@@ -11,5 +11,8 @@
     "verificar:rls": "node scripts/verificar-rls.mjs",
     "versionar": "node scripts/versionar.mjs",
     "imagenes": "node scripts/generar-imagenes.mjs"
+  },
+  "devDependencies": {
+    "jest": "^30.5.1"
   }
 }

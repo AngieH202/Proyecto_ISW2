@@ -1,0 +1,9 @@
+# Se reinstala solo con npm ci. Nunca va al repo.
+node_modules/
+
+# Salida de npm
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
