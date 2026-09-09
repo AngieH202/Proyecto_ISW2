@@ -98,14 +98,9 @@ async function registrar({ nombre = '', id = '', edad = '', tel = '' } = {}) {
   await globalThis.loginPaciente();
 }
 
+// La validación campo por campo está en formulario.test.mjs; acá va lo
+// que pasa con el expediente una vez que los datos están completos.
 describe('loginPaciente()', () => {
-  test('no registra a nadie con campos vacíos', async () => {
-    await registrar({ nombre: 'María López', id: '', edad: '34', tel: '9876-5432' });
-
-    assert.equal(db.expedientes.length, 0);
-    assert.match(el('form-error').textContent, /completá todos los campos/i);
-  });
-
   test('con los datos completos crea el expediente y abre la pantalla del paciente', async () => {
     await registrar(MARIA);
 
