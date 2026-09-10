@@ -217,6 +217,50 @@ describe('buscar expedientes', () => {
   });
 });
 
+describe('cuando el paciente cancela', () => {
+  // La doctora tiene que poder distinguir una solicitud que ella rechazó
+  // de un paciente que se dio de baja: lo segundo le deja un hueco en
+  // una agenda que ya daba por llena.
+  test('la cancelación le aparece diciendo que fue el paciente', async () => {
+    db.citas.push({
+      id: 80, fecha: HOY, hora: '7:45 AM', estado: 'cancelada_paciente',
+      nombre_paciente: 'Rosa Medina', identidad: '0703-1995-22222',
+      telefono_paciente: '7777-8888', motivo: 'Limpieza'
+    });
+    globalThis.cacheLimpiar();
+    await globalThis.cargarCitas();
+    const html = el('citas-lista').innerHTML;
+
+    assert.match(html, /Cancelada por el paciente/);
+    assert.match(html, /El paciente canceló esta cita/);
+  });
+
+  test('con el botón para habilitar ese horario', () => {
+    assert.match(el('citas-lista').innerHTML, /onclick="liberarHorario\(80\)"/);
+    assert.match(el('citas-lista').innerHTML, /Habilitar este horario/);
+  });
+
+  test('y contadas aparte en el resumen del día', () => {
+    assert.match(el('stats-grid').innerHTML, /">1<\/div><div class="lbl">Canceladas por el paciente/);
+  });
+
+  test('al habilitarlo, el aviso desaparece de la agenda', async () => {
+    limpiarNotif();
+    await globalThis.liberarHorario(80);
+
+    assert.equal(cita(80).estado, 'cancelada');
+    assert.match(leerNotif(), /habilitado/i);
+    assert.ok(!el('citas-lista').innerHTML.includes('Habilitar este horario'));
+  });
+
+  test('el horario estaba libre desde la cancelación, no desde el botón', async () => {
+    // El botón es el acuse de la doctora; el slot se libera solo, porque
+    // los dos estados cancelados salen del índice único de 006.
+    const ocupadas = await sbRpc('slots_ocupados', { p_fecha: HOY });
+    assert.ok(!ocupadas.data.map((c) => c.hora).includes('7:45 AM'));
+  });
+});
+
 describe('los datos de la base no se ejecutan como código', () => {
   // El panel arma su HTML con innerHTML. Quien escribe un nombre o un
   // motivo elige texto, no marcado: si no se escapa, elige qué corre en

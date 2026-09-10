@@ -36,6 +36,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-nopresento{background:#f3f4f6;color:#6b7280}
 .btn-confirmar{background:#d0f0fd;color:#0077B6}
 .btn-rechazar{background:#fee2e2;color:#991b1b}
+.btn-liberar{background:linear-gradient(135deg,#0077B6,#00B4D8);color:#fff}
+.aviso-cancelada{margin-top:8px;padding:8px 10px;border-radius:10px;background:#fff5f5;border:1px solid #f3c9c9;font-size:12px;color:#991b1b;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
 .btn-exp{background:#e0f4fb;color:#0077B6}
 .error-msg{background:#fff0f0;border:1px solid #ffcccc;color:#c0392b;font-size:13px;padding:10px 12px;border-radius:8px;margin-bottom:12px;display:none}
 .divider{display:flex;align-items:center;gap:8px;margin:14px 0}
@@ -62,6 +64,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .badge.confirmada{background:#d0f0fd;color:#0077B6}
 .badge.atendida{background:#d1fae5;color:#065f46}
 .badge.cancelada{background:#fee2e2;color:#991b1b}
+.badge.cancelada_paciente{background:#fee2e2;color:#991b1b}
 .badge.nopresento{background:#f3f4f6;color:#6b7280}
 .action-btns{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#0077B6,#00B4D8);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
@@ -99,6 +102,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .notif.show{opacity:1}
 .loading{text-align:center;padding:24px;color:#0096C7;font-size:13px}
 .estado-card{border-radius:14px;padding:20px;text-align:center;margin-bottom:12px}
+.btn-cancelar-cita{margin-top:12px;width:100%;padding:11px;border-radius:10px;border:1.5px solid #991b1b;background:#fff;color:#991b1b;font-size:14px;font-weight:600;cursor:pointer}
+.btn-cancelar-cita:disabled{opacity:.6;cursor:not-allowed}
 .estado-icon{font-size:40px;margin-bottom:8px}
 .estado-titulo{font-size:17px;font-weight:700;margin-bottom:4px}
 .estado-msg{font-size:13px;margin-bottom:14px}

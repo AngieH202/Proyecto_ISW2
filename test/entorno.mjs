@@ -79,6 +79,11 @@ export function instalarBaseFalsa({ tablas = false } = {}) {
     return true;
   });
 
+  // Los dos estados cancelados liberan el horario, igual que en el
+  // índice único de 006 tras la migración 012.
+  const CANCELADOS = ['cancelada', 'cancelada_paciente'];
+  const ocupa = (c) => !CANCELADOS.includes(c.estado);
+
   const RPC = {
     // Upsert por identidad: un solo viaje, sin la carrera que deja leer
     // y después escribir.
@@ -98,14 +103,14 @@ export function instalarBaseFalsa({ tablas = false } = {}) {
     // Devuelve sólo las horas tomadas, sin decir de quién es cada una.
     slots_ocupados({ p_fecha }) {
       return db.citas
-        .filter((c) => c.fecha === p_fecha && c.estado !== 'cancelada')
+        .filter((c) => c.fecha === p_fecha && ocupa(c))
         .map((c) => ({ hora: c.hora }));
     },
 
     // Comprueba el horario e inserta dentro de la misma sentencia: entre
     // una cosa y otra no queda ventana para que se cuele otro paciente.
     crear_solicitud({ p_identidad, p_nombre, p_telefono, p_fecha, p_hora, p_motivo }) {
-      const ocupante = db.citas.find((c) => c.fecha === p_fecha && c.hora === p_hora && c.estado !== 'cancelada');
+      const ocupante = db.citas.find((c) => c.fecha === p_fecha && c.hora === p_hora && ocupa(c));
       if (ocupante) {
         const propia = ocupante.identidad
           ? ocupante.identidad === p_identidad
@@ -126,6 +131,21 @@ export function instalarBaseFalsa({ tablas = false } = {}) {
       const e = db.expedientes.find((x) => x.identidad === p_identidad);
       if (!e) return [];
       return db.citas.filter((c) => (c.identidad ? c.identidad === p_identidad : c.nombre_paciente === e.nombre));
+    },
+
+    // Sólo cancela una cita que sea de esa identidad. La identidad no es
+    // un filtro sino una condición del update: no hay forma de pedir la
+    // baja de una cita ajena.
+    cancelar_mi_cita({ p_identidad, p_fecha, p_hora }) {
+      if (!p_identidad?.trim()) return 'no_encontrada';
+      const cita = db.citas.find((c) => c.fecha === p_fecha && c.hora === p_hora && c.identidad === p_identidad);
+
+      if (!cita) return 'no_encontrada';
+      if (CANCELADOS.includes(cita.estado)) return 'ya_cancelada';
+      if (['atendida', 'nopresento'].includes(cita.estado)) return 'no_se_puede';
+
+      cita.estado = 'cancelada_paciente';
+      return 'cancelada';
     }
   };
 

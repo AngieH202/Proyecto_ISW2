@@ -1,5 +1,5 @@
 import { sbRpc, authLogin } from './api.js';
-import { hideError, showError, showScreen, labelEstado, escapar } from './utils.js';
+import { hideError, showError, showScreen, labelEstado, escapar, notif } from './utils.js';
 import { renderDias, setPaso, setPacienteData, resetSeleccion } from './patient.js';
 import { DOCTORA_USUARIO, DOCTORA_EMAIL } from './config.js';
 import { abrirSesion } from './sesion.js';
@@ -135,6 +135,7 @@ export async function consultarEstado() {
   }
 
   const nombre = citas[0].nombre_paciente;
+  citasConsultadas = citas;
   showScreen('estado');
   const el = document.getElementById('estado-resultado');
 
@@ -143,11 +144,15 @@ export async function consultarEstado() {
     confirmada: { bg: '#d0f0fd', color: '#0077B6', icon: '✅', msg: '¡Tu cita fue confirmada! Recordá llegar a tiempo.' },
     atendida: { bg: '#d1fae5', color: '#065f46', icon: '✓', msg: 'Esta cita ya fue atendida.' },
     cancelada: { bg: '#fee2e2', color: '#991b1b', icon: '✗', msg: 'Tu cita fue rechazada. Podés agendar una nueva.' },
+    cancelada_paciente: { bg: '#fee2e2', color: '#991b1b', icon: '✗', msg: 'Cancelaste esta cita. El horario quedó libre y podés agendar otra.' },
     nopresento: { bg: '#f3f4f6', color: '#6b7280', icon: '—', msg: 'Se registró que no te presentaste a esta cita.' }
   };
 
-  el.innerHTML = citas.map((c) => {
+  el.innerHTML = citas.map((c, i) => {
     const col = colores[c.estado] || colores.pendiente;
+    // Sólo se cancela lo que todavía no ocurrió. Una cita atendida ya
+    // pasó, y darla de baja falsearía el historial clínico.
+    const sePuedeCancelar = c.estado === 'pendiente' || c.estado === 'confirmada';
     return `<div class="estado-card" style="background:${col.bg};border:1.5px solid ${col.color}">
       <div class="estado-icon">${col.icon}</div>
       <div class="estado-titulo" style="color:${col.color}">${labelEstado(c.estado)}</div>
@@ -158,11 +163,54 @@ export async function consultarEstado() {
         <div class="exp-row"><span>Horario</span><span>${escapar(c.hora)}</span></div>
         <div class="exp-row"><span>Motivo</span><span>${escapar(c.motivo || '—')}</span></div>
       </div>
+      ${sePuedeCancelar ? `<button class="btn-cancelar-cita" id="btn-cancelar-${i}" onclick="cancelarCita(${i})">Cancelar esta cita</button>` : ''}
     </div>`;
   }).join('');
 
   btn.disabled = false;
   btn.textContent = 'Consultar';
+}
+
+// Las citas que se están mostrando. El botón manda el índice y de acá
+// sale la fecha y la hora: así no viaja texto de la base dentro de un
+// onclick.
+let citasConsultadas = [];
+
+export async function cancelarCita(indice) {
+  const cita = citasConsultadas[indice];
+  if (!cita) return;
+
+  const btn = document.getElementById('btn-cancelar-' + indice);
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Cancelando...';
+  }
+
+  // La identidad es la que se consultó, no la que diga la tarjeta: la
+  // función sólo cancela una cita que corresponda a esa identidad.
+  const identidad = document.getElementById('e-id').value.trim();
+  const r = await sbRpc('cancelar_mi_cita', {
+    p_identidad: identidad,
+    p_fecha: cita.fecha,
+    p_hora: cita.hora
+  });
+
+  // 'cancelada' y 'ya_cancelada' terminan igual: la cita está dada de
+  // baja. Esa equivalencia es lo que vuelve seguro el reintento.
+  if (r.ok && (r.data === 'cancelada' || r.data === 'ya_cancelada')) {
+    notif('Tu cita fue cancelada. El horario quedó libre.');
+    await consultarEstado();
+    return;
+  }
+
+  if (r.ok && r.data === 'no_se_puede') notif('Esa cita ya fue atendida y no se puede cancelar.');
+  else if (r.ok && r.data === 'no_encontrada') notif('No encontramos esa cita a tu nombre.');
+  else notif('No pudimos cancelar. Intentá de nuevo.');
+
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Cancelar esta cita';
+  }
 }
 
 // Salida del lado publico: limpia el formulario y vuelve al login. El
@@ -188,4 +236,5 @@ window.setRole = setRole;
 window.loginDoctora = loginDoctora;
 window.loginPaciente = loginPaciente;
 window.consultarEstado = consultarEstado;
+window.cancelarCita = cancelarCita;
 window.logout = logout;

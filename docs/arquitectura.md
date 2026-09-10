@@ -237,19 +237,32 @@ stateDiagram-v2
 
     pendiente --> confirmada : la doctora confirma
     pendiente --> cancelada : la doctora rechaza
+    pendiente --> cancelada_paciente : el paciente se da de baja
     pendiente --> atendida : marcar atendida
     pendiente --> nopresento : marcar no se presentó
 
     confirmada --> atendida : marcar atendida
     confirmada --> nopresento : marcar no se presentó
+    confirmada --> cancelada_paciente : el paciente se da de baja
+
+    cancelada_paciente --> cancelada : la doctora habilita el horario
 
     atendida --> [*] : abre el modal y registra una visita clínica
     cancelada --> [*]
     nopresento --> [*]
 ```
 
-Los slots ocupados se calculan excluyendo únicamente el estado `cancelada`, así
-que una cita `nopresento` sigue bloqueando su horario.
+Los slots ocupados se calculan excluyendo los dos estados cancelados —
+`cancelada`, que pone la doctora al rechazar, y `cancelada_paciente`, que pone
+el paciente al darse de baja—, así que una cita `nopresento` sigue bloqueando
+su horario pero una cancelada no.
+
+**Quién canceló importa.** Son dos estados y no uno porque a la doctora no le
+da lo mismo una solicitud que ella rechazó que un paciente que se dio de baja:
+lo segundo le deja un hueco en una agenda que ya daba por llena, y por eso
+aparece marcado en su panel con el botón para habilitar ese horario. El slot,
+eso sí, se libera desde la cancelación misma: el botón es el acuse, no lo que
+lo desbloquea.
 
 ---
 

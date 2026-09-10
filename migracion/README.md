@@ -21,6 +21,8 @@ El diagrama entidad-relación está en [arquitectura.md](../docs/arquitectura.md
 | 008 | [`008_vistas_de_consulta.sql`](008_vistas_de_consulta.sql) | Tres vistas para consultas e informes | Opcional |
 | 009 | [`009_datos_de_prueba.sql`](009_datos_de_prueba.sql) | Pacientes, citas y visitas de ejemplo | No |
 | 010 | [`010_comprobaciones.sql`](010_comprobaciones.sql) | Solo `SELECT`: busca duplicados y contadores torcidos | No |
+| 011 | [`011_rls_endurecido.sql`](011_rls_endurecido.sql) | Cierra las tablas a `anon` y expone al paciente sólo cuatro funciones RPC | Sí |
+| 012 | [`012_cancelacion_por_el_paciente.sql`](012_cancelacion_por_el_paciente.sql) | Estado `cancelada_paciente` y función `cancelar_mi_cita` | Sí |
 
 Dependencias que fuerzan el orden:
 
@@ -28,6 +30,9 @@ Dependencias que fuerzan el orden:
 - **004 después de 002** — `visitas_clinicas.expediente_id` referencia `expedientes(id)`.
 - **005 a 008 después de 001–004** — operan sobre tablas que ya deben existir.
 - **009 al final** — respeta el índice único de 006 y dispara el trigger de 007.
+- **012 después de 006 y 011** — rehace el índice único de 006 para que las
+  citas que cancela el paciente también liberen su horario, y reemplaza dos de
+  las funciones que crea 011.
 
 ## Si tu base ya existe
 

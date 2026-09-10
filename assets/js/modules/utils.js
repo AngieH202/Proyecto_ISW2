@@ -40,6 +40,7 @@ export function labelEstado(e) {
     confirmada: 'Confirmada',
     atendida: 'Atendida',
     cancelada: 'Cancelada',
+    cancelada_paciente: 'Cancelada por el paciente',
     nopresento: 'No se presentó'
   }[e] || e;
 }

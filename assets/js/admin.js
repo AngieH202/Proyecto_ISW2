@@ -69,13 +69,15 @@ window.cargarCitas = async function () {
   const conf = citas.filter((c) => c.estado === 'confirmada').length;
   const atend = citas.filter((c) => c.estado === 'atendida').length;
   const pend = citas.filter((c) => c.estado === 'pendiente').length;
+  const canceladas = citas.filter((c) => c.estado === 'cancelada_paciente').length;
   const stats = document.getElementById('stats-grid');
   if (stats) {
     stats.innerHTML = `
       <div class="stat"><div class="num">${citas.length}</div><div class="lbl">Citas hoy</div></div>
       <div class="stat"><div class="num" style="color:#0077B6">${conf}</div><div class="lbl">Confirmadas</div></div>
       <div class="stat"><div class="num" style="color:#065f46">${atend}</div><div class="lbl">Atendidas</div></div>
-      <div class="stat"><div class="num" style="color:#856404">${pend}</div><div class="lbl">Pendientes</div></div>`;
+      <div class="stat"><div class="num" style="color:#856404">${pend}</div><div class="lbl">Pendientes</div></div>
+      ${canceladas ? `<div class="stat"><div class="num" style="color:#991b1b">${canceladas}</div><div class="lbl">Canceladas por el paciente</div></div>` : ''}`;
   }
   if (!citas.length) {
     if (lista) lista.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><p>Sin citas para este día</p></div>';
@@ -93,6 +95,10 @@ window.cargarCitas = async function () {
             <button class="btn-sm btn-nopresento" onclick="cambiarEstado(${Number(c.id)},'nopresento')">No se presentó</button>
           </div>` : ''}
           ${c.estado === 'atendida' ? `<div class="action-btns"><button class="btn-sm btn-exp" onclick="verExpedienteDesde(${Number(c.id)})">📋 Ver expediente</button></div>` : ''}
+          ${c.estado === 'cancelada_paciente' ? `<div class="aviso-cancelada">
+            <span>El paciente canceló esta cita. El horario ya está libre.</span>
+            <button class="btn-sm btn-liberar" onclick="liberarHorario(${Number(c.id)})">✓ Habilitar este horario</button>
+          </div>` : ''}
         </div>
         <span class="badge ${c.estado === 'nopresento' ? 'nopresento' : escapar(c.estado)}">${labelEstado(c.estado)}</span>
       </div></div>`).join('');
@@ -112,6 +118,17 @@ window.marcarAtendida = async function (citaId, nombrePaciente = nombreDeCita(ci
     abrirModalDiagnostico();
   }
   notif('Cita marcada como atendida');
+  window.cargarCitas();
+};
+
+// Cuando el paciente cancela, el horario queda libre en el acto: tanto
+// 'cancelada' como 'cancelada_paciente' salen del indice unico de 006 y
+// de slots_ocupados. Este boton es el acuse de la doctora: confirma que
+// vio el hueco y saca el aviso de la agenda, dejando la cita archivada
+// como una cancelacion mas.
+window.liberarHorario = async function (id) {
+  await sbPatch('citas', 'id=eq.' + id, { estado: 'cancelada' });
+  notif('Horario habilitado. Ya puede tomarlo otro paciente.');
   window.cargarCitas();
 };
 
