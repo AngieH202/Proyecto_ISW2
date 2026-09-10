@@ -138,6 +138,51 @@ describe('nadie cancela la cita de otro', () => {
   });
 });
 
+describe('cancelar desde el propio flujo de agendamiento', () => {
+  const enPaso = (n) => el('pstep-' + n).classList.contains('active');
+  const enLogin = () => el('screen-login').classList.contains('active');
+
+  test('en los pasos previos no hay nada que dar de baja: sólo vuelve al login', async () => {
+    await entrarComo(MARIA);
+    patient.selDia(DIA, '15 may 2030', 'Mié');
+    patient.selSlot(2);
+    const citasAntes = db.citas.length;
+    limpiarNotif();
+
+    globalThis.cancelarAgendamiento();
+
+    assert.equal(db.citas.length, citasAntes, 'la cita todavía no existía');
+    assert.equal(patient.diaSel, null, 'suelta lo que había elegido');
+    assert.equal(patient.slotSel, null);
+    assert.equal(enLogin(), true, 'vuelve al formulario');
+  });
+
+  test('desde la confirmación sí da de baja la cita recién enviada', async () => {
+    await entrarComo(MARIA);
+    await agendar({ slot: 2, motivo: 'Extracción' });
+    const hora = citaEn('8:30 AM')?.hora;
+
+    assert.equal(enPaso(4), true, 'primero llega a la confirmación');
+    assert.equal(citaActivaEn(hora).estado, 'pendiente');
+
+    limpiarNotif();
+    await globalThis.cancelarCitaAgendada();
+
+    assert.equal(citaEn('8:30 AM').estado, 'cancelada_paciente');
+    assert.match(leerNotif(), /cancelada/i);
+  });
+
+  test('y lo devuelve al login con el formulario limpio', () => {
+    assert.equal(enLogin(), true);
+    assert.equal(el('p-nombre').value, '', 'el formulario queda en blanco');
+    assert.equal(patient.diaSel, null);
+  });
+
+  test('ese horario queda libre para otro paciente', async () => {
+    assert.ok(!(await horasOcupadas()).includes('8:30 AM'));
+  });
+});
+
 describe('una cita ya atendida no se cancela', () => {
   test('devuelve no_se_puede y el historial queda intacto', async () => {
     // Borrarla del historial sería falsear lo que ocurrió.

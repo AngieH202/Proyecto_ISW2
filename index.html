@@ -16,7 +16,7 @@
     }
   })();
 </script>
-<link rel="stylesheet" href="/assets/css/app.css?v=d73ff984">
+<link rel="stylesheet" href="/assets/css/app.css?v=3af83a0b">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/assets/icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/icono-192.png">
@@ -140,6 +140,7 @@
 <div class="dias-grid" id="dias-grid"></div>
 <p id="dia-err" style="font-size:12px;color:#c0392b;display:none;margin-bottom:10px">Por favor seleccioná un día.</p>
 <button class="btn-primary" onclick="irPaso2()">Continuar &rarr;</button>
+<button class="btn-cancelar-cita" onclick="cancelarAgendamiento()">Cancelar cita</button>
 </div>
 
     <!-- PASO 2: ELEGIR HORA -->
@@ -150,6 +151,7 @@
       <p id="slot-err" style="font-size:12px;color:#c0392b;display:none;margin-bottom:10px">Por favor seleccioná un horario.</p>
       <button class="btn-primary" onclick="irPaso3()">Continuar &rarr;</button>
       <button class="btn-secondary" onclick="irPaso1()">&larr; Cambiar día</button>
+      <button class="btn-cancelar-cita" onclick="cancelarAgendamiento()">Cancelar cita</button>
     </div>
 
     <!-- PASO 3: DATOS + MOTIVO -->
@@ -167,6 +169,7 @@
       <p id="motivo-err" style="font-size:12px;color:#c0392b;display:none;margin-bottom:10px">Por favor describí el motivo de tu consulta.</p>
       <button class="btn-primary" id="btn-enviar" onclick="enviarSolicitud()">Enviar solicitud</button>
       <button class="btn-secondary" onclick="irPaso2()">&larr; Cambiar hora</button>
+      <button class="btn-cancelar-cita" onclick="cancelarAgendamiento()">Cancelar cita</button>
     </div>
 
     <!-- PASO 4: CONFIRMACION -->
@@ -182,6 +185,7 @@
         <span style="color:#0096C7">Entrá de nuevo → "Ver estado de mi cita" → tu número de identidad</span>
       </div>
       <button class="btn-primary" style="margin-top:12px" onclick="nuevaCita()">Agendar otra cita</button>
+      <button class="btn-cancelar-cita" id="btn-cancelar-agendada" onclick="cancelarCitaAgendada()">Cancelar esta cita</button>
       <button class="btn-secondary" onclick="logout()">Salir</button>
     </div>
   </div>
@@ -189,7 +193,7 @@
 
 </div>
 
-  <script type="module" src="/assets/js/app.js?v=d73ff984"></script>
+  <script type="module" src="/assets/js/app.js?v=3af83a0b"></script>
 
   <script>
     // El service worker solo se registra sobre HTTPS o localhost; en

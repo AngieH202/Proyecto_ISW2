@@ -147,6 +147,22 @@ describe('los horarios de hoy que ya pasaron', () => {
   });
 });
 
+describe('cambiar de día mientras carga', () => {
+  test('la respuesta que llega tarde no pisa la pantalla', async () => {
+    // Entre la petición y la respuesta el paciente puede cambiar de día
+    // o soltar la selección. Pintar esa respuesta mostraría horarios de
+    // un día que ya no es el que está mirando.
+    citas.push({ fecha: '2030-05-20', hora: '7:00 AM', estado: 'pendiente' });
+
+    elegirDia('2030-05-20', '20 may 2030', 'Lun');
+    const enVuelo = patient.cargarSlotsDia();
+    patient.resetSeleccion();               // suelta el día antes de que responda
+
+    await enVuelo;                          // no debe lanzar
+    assert.equal(patient.diaSel, null);
+  });
+});
+
 describe('enviarSolicitud()', () => {
   test('sin motivo no manda nada a la base', async () => {
     elegirDia();

@@ -1,28 +1,28 @@
 {
   "total": {
     "lines": {
-      "total": 1289,
-      "covered": 1188,
+      "total": 1354,
+      "covered": 1267,
       "skipped": 0,
-      "pct": 92.16
+      "pct": 93.57
     },
     "functions": {
-      "total": 107,
-      "covered": 87,
+      "total": 112,
+      "covered": 93,
       "skipped": 0,
-      "pct": 81.31
+      "pct": 83.04
     },
     "branches": {
-      "total": 269,
-      "covered": 210,
+      "total": 283,
+      "covered": 219,
       "skipped": 0,
-      "pct": 78.07
+      "pct": 77.39
     },
     "statements": {
-      "total": 1289,
-      "covered": 1188,
+      "total": 1354,
+      "covered": 1267,
       "skipped": 0,
-      "pct": 92.16
+      "pct": 93.57
     }
   },
   "assets/js/admin.js": {
@@ -105,28 +105,28 @@
   },
   "assets/js/modules/auth.js": {
     "lines": {
-      "total": 240,
-      "covered": 203,
+      "total": 296,
+      "covered": 273,
       "skipped": 0,
-      "pct": 84.58
+      "pct": 92.23
     },
     "functions": {
-      "total": 7,
-      "covered": 5,
+      "total": 12,
+      "covered": 11,
       "skipped": 0,
-      "pct": 71.43
+      "pct": 91.67
     },
     "branches": {
-      "total": 38,
-      "covered": 28,
+      "total": 49,
+      "covered": 34,
       "skipped": 0,
-      "pct": 73.68
+      "pct": 69.39
     },
     "statements": {
-      "total": 240,
-      "covered": 203,
+      "total": 296,
+      "covered": 273,
       "skipped": 0,
-      "pct": 84.58
+      "pct": 92.23
     }
   },
   "assets/js/modules/cache.js": {
@@ -183,10 +183,10 @@
   },
   "assets/js/modules/patient.js": {
     "lines": {
-      "total": 293,
-      "covered": 286,
+      "total": 302,
+      "covered": 295,
       "skipped": 0,
-      "pct": 97.61
+      "pct": 97.68
     },
     "functions": {
       "total": 22,
@@ -195,16 +195,16 @@
       "pct": 95.45
     },
     "branches": {
-      "total": 62,
-      "covered": 58,
+      "total": 65,
+      "covered": 61,
       "skipped": 0,
-      "pct": 93.55
+      "pct": 93.85
     },
     "statements": {
-      "total": 293,
-      "covered": 286,
+      "total": 302,
+      "covered": 295,
       "skipped": 0,
-      "pct": 97.61
+      "pct": 97.68
     }
   },
   "assets/js/modules/sesion.js": {

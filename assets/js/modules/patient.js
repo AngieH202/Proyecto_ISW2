@@ -124,6 +124,13 @@ export function cambiarSemana(dir) {
 
 export async function cargarSlotsDia() {
   if (!diaSel) return;
+
+  // El dia con el que arranca esta carga. Entre la peticion y la
+  // respuesta el paciente puede cambiar de dia o cancelar: si para
+  // entonces diaSel ya no es este, esta respuesta quedo vieja y pintarla
+  // mostraria los horarios de otro dia.
+  const dia = diaSel;
+
   const target = document.getElementById('horarios-grid');
   if (target) target.innerHTML = '<div class="loading">Cargando horarios...</div>';
 
@@ -132,13 +139,15 @@ export async function cargarSlotsDia() {
   //
   // Sin cache: mostrar como libre un horario que otro acaba de tomar es
   // el peor error posible en esta pantalla.
-  const ocupadas = await sbRpc('slots_ocupados', { p_fecha: diaSel.key });
+  const ocupadas = await sbRpc('slots_ocupados', { p_fecha: dia.key });
+  if (diaSel !== dia) return;
+
   const horasOcupadas = new Set(
     (Array.isArray(ocupadas.data) ? ocupadas.data : []).map((c) => c.hora)
   );
 
   const ahora = new Date();
-  const esHoy = diaSel.key === formatoFechaKey(ahora);
+  const esHoy = dia.key === formatoFechaKey(ahora);
 
   const html = SLOTS_BASE.map((h, i) => {
     const ocupado = horasOcupadas.has(h);

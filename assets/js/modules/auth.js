@@ -1,7 +1,7 @@
 import { sbRpc, authLogin } from './api.js';
 import { hideError, showError, showScreen, labelEstado, escapar, notif } from './utils.js';
-import { renderDias, setPaso, setPacienteData, resetSeleccion } from './patient.js';
-import { DOCTORA_USUARIO, DOCTORA_EMAIL } from './config.js';
+import { renderDias, setPaso, setPacienteData, resetSeleccion, pacienteData, diaSel, slotSel } from './patient.js';
+import { DOCTORA_USUARIO, DOCTORA_EMAIL, SLOTS_BASE } from './config.js';
 import { abrirSesion } from './sesion.js';
 
 export function setRole(r) {
@@ -213,6 +213,60 @@ export async function cancelarCita(indice) {
   }
 }
 
+// Abandonar el agendamiento antes de enviarlo, desde los pasos 1 a 3.
+// Todavía no hay ninguna cita creada --se crea recién al enviar la
+// solicitud-- así que no hay nada que dar de baja en la base: alcanza
+// con soltar lo elegido y volver al formulario.
+export function cancelarAgendamiento() {
+  resetSeleccion();
+  notif('Cancelaste el agendamiento.');
+  logout();
+}
+
+// Cancelar la cita que se acaba de enviar, desde la pantalla de
+// confirmación. Acá sí existe en la base, así que hay que darla de baja
+// para que el horario vuelva a quedar libre.
+export async function cancelarCitaAgendada() {
+  if (!diaSel || slotSel === null) {
+    logout();
+    return;
+  }
+
+  const btn = document.getElementById('btn-cancelar-agendada');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Cancelando...';
+  }
+
+  const r = await sbRpc('cancelar_mi_cita', {
+    p_identidad: pacienteData.id,
+    p_fecha: diaSel.key,
+    p_hora: SLOTS_BASE[slotSel]
+  });
+
+  const restaurar = () => {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Cancelar esta cita';
+    }
+  };
+
+  // 'cancelada' y 'ya_cancelada' terminan igual: la cita está dada de
+  // baja. Esa equivalencia es lo que vuelve seguro el reintento.
+  if (r.ok && (r.data === 'cancelada' || r.data === 'ya_cancelada')) {
+    notif('Tu cita fue cancelada. El horario quedó libre.');
+    resetSeleccion();
+    restaurar();
+    logout();
+    return;
+  }
+
+  notif(r.ok && r.data === 'no_se_puede'
+    ? 'Esa cita ya fue atendida y no se puede cancelar.'
+    : 'No pudimos cancelar. Intentá de nuevo.');
+  restaurar();
+}
+
 // Salida del lado publico: limpia el formulario y vuelve al login. El
 // portal tiene la suya, que ademas borra la cookie de sesion -- ver
 // cerrarSesion en sesion.js.
@@ -237,4 +291,6 @@ window.loginDoctora = loginDoctora;
 window.loginPaciente = loginPaciente;
 window.consultarEstado = consultarEstado;
 window.cancelarCita = cancelarCita;
+window.cancelarAgendamiento = cancelarAgendamiento;
+window.cancelarCitaAgendada = cancelarCitaAgendada;
 window.logout = logout;

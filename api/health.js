@@ -9,7 +9,7 @@ import { SB_URL, SB_KEY } from './_sesion.js';
 // Consulta Supabase de verdad y mide la latencia: un JSON fijo diciendo
 // "ok" no comprueba nada.
 
-const VERSION = 'd73ff984';
+const VERSION = '3af83a0b';
 const LENTO_MS = 1500;
 
 export default async function handler(req, res) {
