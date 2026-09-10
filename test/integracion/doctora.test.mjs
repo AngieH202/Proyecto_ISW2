@@ -319,6 +319,41 @@ describe('los datos de la base no se ejecutan como código', () => {
   });
 });
 
+describe('cuando el proxy responde algo que no son datos', () => {
+  // Pasó de verdad: /api/db/citas devolvía el 404 de la plataforma, en
+  // HTML. r.json() lanzaba, la carga moría a mitad y la pantalla se
+  // quedaba en "Cargando..." para siempre, sin decir nada.
+  const fetchReal = globalThis.fetch;
+
+  test('la pantalla no se queda colgada en Cargando', async () => {
+    globalThis.fetch = async () => ({
+      ok: false, status: 404,
+      json: async () => { throw new SyntaxError('Unexpected token T in JSON'); }
+    });
+    globalThis.cacheLimpiar();
+
+    await globalThis.cargarCitas();
+    globalThis.fetch = fetchReal;
+
+    assert.ok(!el('citas-lista').innerHTML.includes('Cargando'), 'tiene que terminar de cargar');
+    assert.match(el('citas-lista').innerHTML, /Sin citas para este día/);
+  });
+
+  test('y con la sesión vencida vuelve al login', async () => {
+    globalThis.fetch = async () => ({
+      ok: false, status: 401,
+      json: async () => ({ error: 'Sesión requerida' })
+    });
+    globalThis.cacheLimpiar();
+    globalThis.location.href = '';
+
+    await globalThis.cargarPendientes();
+    globalThis.fetch = fetchReal;
+
+    assert.equal(globalThis.location.href, '/login', 'no tiene sentido mostrar un panel vacío');
+  });
+});
+
 describe('el portal no baja el token al navegador', () => {
   test('todas las tablas se piden al proxy /api/db', () => {
     const aSupabase = peticiones.filter((p) => p.ruta.startsWith('/rest/v1/') && !p.ruta.includes('/rpc/'));

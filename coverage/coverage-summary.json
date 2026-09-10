@@ -1,36 +1,36 @@
 {
   "total": {
     "lines": {
-      "total": 1354,
-      "covered": 1267,
+      "total": 1372,
+      "covered": 1288,
       "skipped": 0,
-      "pct": 93.57
+      "pct": 93.88
     },
     "functions": {
-      "total": 112,
-      "covered": 93,
+      "total": 113,
+      "covered": 94,
       "skipped": 0,
-      "pct": 83.04
+      "pct": 83.19
     },
     "branches": {
-      "total": 283,
-      "covered": 219,
+      "total": 290,
+      "covered": 227,
       "skipped": 0,
-      "pct": 77.39
+      "pct": 78.28
     },
     "statements": {
-      "total": 1354,
-      "covered": 1267,
+      "total": 1372,
+      "covered": 1288,
       "skipped": 0,
-      "pct": 93.57
+      "pct": 93.88
     }
   },
   "assets/js/admin.js": {
     "lines": {
       "total": 434,
-      "covered": 392,
+      "covered": 395,
       "skipped": 0,
-      "pct": 90.32
+      "pct": 91.01
     },
     "functions": {
       "total": 44,
@@ -39,16 +39,16 @@
       "pct": 70.45
     },
     "branches": {
-      "total": 102,
-      "covered": 67,
+      "total": 103,
+      "covered": 69,
       "skipped": 0,
-      "pct": 65.69
+      "pct": 66.99
     },
     "statements": {
       "total": 434,
-      "covered": 392,
+      "covered": 395,
       "skipped": 0,
-      "pct": 90.32
+      "pct": 91.01
     }
   },
   "assets/js/app.js": {
@@ -79,28 +79,28 @@
   },
   "assets/js/modules/api.js": {
     "lines": {
-      "total": 126,
-      "covered": 111,
+      "total": 144,
+      "covered": 129,
       "skipped": 0,
-      "pct": 88.1
+      "pct": 89.58
     },
     "functions": {
-      "total": 11,
-      "covered": 8,
-      "skipped": 0,
-      "pct": 72.73
-    },
-    "branches": {
-      "total": 24,
-      "covered": 18,
+      "total": 12,
+      "covered": 9,
       "skipped": 0,
       "pct": 75
     },
-    "statements": {
-      "total": 126,
-      "covered": 111,
+    "branches": {
+      "total": 30,
+      "covered": 24,
       "skipped": 0,
-      "pct": 88.1
+      "pct": 80
+    },
+    "statements": {
+      "total": 144,
+      "covered": 129,
+      "skipped": 0,
+      "pct": 89.58
     }
   },
   "assets/js/modules/auth.js": {

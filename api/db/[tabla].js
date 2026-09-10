@@ -1,8 +1,13 @@
-import { leerCookie, validar, COOKIE, SB_URL, SB_KEY } from './_sesion.js';
+import { leerCookie, validar, COOKIE, SB_URL, SB_KEY } from '../_sesion.js';
 
 // Proxy de datos del portal.
 //
 //   /api/db/citas?fecha=eq.2026-09-10&order=hora.asc
+//
+// El archivo se llama [tabla].js porque la tabla va en la ruta. Como
+// api/db.js quedaba servido solo en /api/db exacto, /api/db/citas
+// respondia el 404 de la plataforma --en HTML-- y el panel moria al
+// intentar leerlo como JSON: se quedaba en "Cargando..." para siempre.
 //
 // Reenvia a PostgREST firmando con el token de la doctora, que vive en
 // una cookie HttpOnly y por eso nunca baja al navegador. Sin esto habria
@@ -32,11 +37,19 @@ export default async function handler(req, res) {
   // conecta a ningún lado. Va en https igual, para no dejar un http
   // escrito que después alguien copie a un lugar donde sí importe.
   const url = new URL(req.url, 'https://local');
+
+  // El segmento dinámico de la ruta. Se lee del path y no de req.query
+  // para no depender de cómo lo exponga la plataforma.
   const tabla = url.pathname.replace(/^\/api\/db\/?/, '').split('/')[0];
 
   if (!TABLAS.has(tabla)) {
     return res.status(403).json({ error: 'Tabla no permitida' });
   }
+
+  // La plataforma agrega el segmento dinámico al query; PostgREST lo
+  // leería como un filtro por una columna llamada "tabla" y devolvería
+  // un 400.
+  url.searchParams.delete('tabla');
 
   const token = leerCookie(req, COOKIE);
   const destino = `${SB_URL}/rest/v1/${tabla}${url.search}`;

@@ -66,9 +66,27 @@ export async function sbGet(tabla, query = '', opciones = {}) {
     headers: cabeceras(),
     cache: usarCache ? 'default' : 'no-store'
   });
-  const datos = await r.json();
 
-  if (usarCache && r.ok) guardar(k, datos, ttl);
+  // Una lectura de tabla devuelve una lista. Cualquier otra cosa es un
+  // error --un 401 con su json, o el HTML de un 404 de la plataforma, que
+  // ni siquiera parsea-- y quien llama espera poder recorrer el
+  // resultado. Devolver siempre un array evita que la pantalla se quede
+  // colgada en "Cargando..." por una excepción a mitad de camino.
+  const datos = await r.json().catch(() => null);
+
+  // La cookie venció: no tiene sentido seguir mostrando un panel vacío,
+  // hay que volver a entrar.
+  if (r.status === 401 && enPortal()) {
+    window.location.href = '/login';
+    return [];
+  }
+
+  if (!r.ok || !Array.isArray(datos)) {
+    console.error('sbGet', tabla, r.status, datos);
+    return [];
+  }
+
+  if (usarCache) guardar(k, datos, ttl);
   return datos;
 }
 
