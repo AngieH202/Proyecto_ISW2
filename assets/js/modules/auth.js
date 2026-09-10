@@ -1,5 +1,5 @@
 import { sbRpc, authLogin } from './api.js';
-import { hideError, showError, showScreen, labelEstado } from './utils.js';
+import { hideError, showError, showScreen, labelEstado, escapar } from './utils.js';
 import { renderDias, setPaso, setPacienteData, resetSeleccion } from './patient.js';
 import { DOCTORA_USUARIO, DOCTORA_EMAIL } from './config.js';
 import { abrirSesion } from './sesion.js';
@@ -153,10 +153,10 @@ export async function consultarEstado() {
       <div class="estado-titulo" style="color:${col.color}">${labelEstado(c.estado)}</div>
       <div class="estado-msg" style="color:${col.color}">${col.msg}</div>
       <div style="background:#fff;border-radius:10px;padding:12px;text-align:left;font-size:13px">
-        <div class="exp-row"><span>Paciente</span><span>${nombre}</span></div>
-        <div class="exp-row"><span>Fecha</span><span>${c.fecha || '—'}</span></div>
-        <div class="exp-row"><span>Horario</span><span>${c.hora}</span></div>
-        <div class="exp-row"><span>Motivo</span><span>${c.motivo || '—'}</span></div>
+        <div class="exp-row"><span>Paciente</span><span>${escapar(nombre)}</span></div>
+        <div class="exp-row"><span>Fecha</span><span>${escapar(c.fecha || '—')}</span></div>
+        <div class="exp-row"><span>Horario</span><span>${escapar(c.hora)}</span></div>
+        <div class="exp-row"><span>Motivo</span><span>${escapar(c.motivo || '—')}</span></div>
       </div>
     </div>`;
   }).join('');

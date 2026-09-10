@@ -28,7 +28,10 @@ export default async function handler(req, res) {
   }
 
   // /api/db/<tabla>?<query>
-  const url = new URL(req.url, 'http://local');
+  // La base sólo sirve para poder parsear una ruta relativa; no se
+  // conecta a ningún lado. Va en https igual, para no dejar un http
+  // escrito que después alguien copie a un lugar donde sí importe.
+  const url = new URL(req.url, 'https://local');
   const tabla = url.pathname.replace(/^\/api\/db\/?/, '').split('/')[0];
 
   if (!TABLAS.has(tabla)) {

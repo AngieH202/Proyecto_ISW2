@@ -5,7 +5,7 @@
 // marcado privado viajaba a cualquiera que abriera el sitio.
 
 import { sbGet, sbPost, sbPatch } from './modules/api.js';
-import { notif, showScreen, labelEstado, iniciales, fechaHoy, horaAhora } from './modules/utils.js';
+import { notif, showScreen, labelEstado, iniciales, fechaHoy, horaAhora, escapar } from './modules/utils.js';
 import { estado as estadoCache, limpiar as limpiarCache } from './modules/cache.js';
 import { cerrarSesion } from './modules/sesion.js';
 
@@ -65,6 +65,7 @@ window.cargarCitas = async function () {
   if (lista) lista.innerHTML = '<div class="loading">Cargando citas...</div>';
   const key = formatoKeyDoc(fechaDoc);
   const citas = await sbGet('citas', 'fecha=eq.' + key + '&order=hora.asc');
+  citasDelDia = citas;
   const conf = citas.filter((c) => c.estado === 'confirmada').length;
   const atend = citas.filter((c) => c.estado === 'atendida').length;
   const pend = citas.filter((c) => c.estado === 'pendiente').length;
@@ -83,22 +84,27 @@ window.cargarCitas = async function () {
   if (lista) {
     lista.innerHTML = citas.map((c) => `
       <div class="card"><div class="cita-row">
-        <div class="hora-badge">${c.hora}</div>
+        <div class="hora-badge">${escapar(c.hora)}</div>
         <div class="cita-info">
-          <div class="cita-nombre">${c.nombre_paciente}</div>
-          <div class="cita-motivo">${c.fecha ? c.fecha + ' · ' : ''} ${c.motivo || ''}</div>
+          <div class="cita-nombre">${escapar(c.nombre_paciente)}</div>
+          <div class="cita-motivo">${c.fecha ? escapar(c.fecha) + ' · ' : ''} ${escapar(c.motivo || '')}</div>
           ${(c.estado === 'confirmada' || c.estado === 'pendiente') ? `<div class="action-btns">
-            <button class="btn-sm btn-atendida" onclick="marcarAtendida(${c.id},'${c.nombre_paciente.replace(/'/g, "\\'") }')">✓ Atendida</button>
-            <button class="btn-sm btn-nopresento" onclick="cambiarEstado(${c.id},'nopresento')">No se presentó</button>
+            <button class="btn-sm btn-atendida" onclick="marcarAtendida(${Number(c.id)})">✓ Atendida</button>
+            <button class="btn-sm btn-nopresento" onclick="cambiarEstado(${Number(c.id)},'nopresento')">No se presentó</button>
           </div>` : ''}
-          ${c.estado === 'atendida' ? `<div class="action-btns"><button class="btn-sm btn-exp" onclick="verExpedienteDesde('${encodeURIComponent(c.nombre_paciente)}')">📋 Ver expediente</button></div>` : ''}
+          ${c.estado === 'atendida' ? `<div class="action-btns"><button class="btn-sm btn-exp" onclick="verExpedienteDesde(${Number(c.id)})">📋 Ver expediente</button></div>` : ''}
         </div>
-        <span class="badge ${c.estado === 'nopresento' ? 'nopresento' : c.estado}">${labelEstado(c.estado)}</span>
+        <span class="badge ${c.estado === 'nopresento' ? 'nopresento' : escapar(c.estado)}">${labelEstado(c.estado)}</span>
       </div></div>`).join('');
   }
 };
 
-window.marcarAtendida = async function (citaId, nombrePaciente) {
+// El nombre se resuelve por id contra las citas ya cargadas. Se admite
+// recibirlo para no romper a quien la llame con los dos argumentos.
+const nombreDeCita = (citaId) =>
+  citasDelDia.find((c) => String(c.id) === String(citaId))?.nombre_paciente ?? '';
+
+window.marcarAtendida = async function (citaId, nombrePaciente = nombreDeCita(citaId)) {
   await sbPatch('citas', 'id=eq.' + citaId, { estado: 'atendida' });
   const exps = await sbGet('expedientes', `nombre=eq.${encodeURIComponent(nombrePaciente)}`);
   if (exps.length) {
@@ -115,8 +121,9 @@ window.cambiarEstado = async function (id, nuevo) {
   window.cargarCitas();
 };
 
-window.verExpedienteDesde = async function (nombreEnc) {
-  const nombre = decodeURIComponent(nombreEnc);
+window.verExpedienteDesde = async function (citaId) {
+  const nombre = nombreDeCita(citaId);
+  if (!nombre) return notif('Expediente no encontrado');
   const exps = await sbGet('expedientes', `nombre=eq.${encodeURIComponent(nombre)}`);
   if (exps.length) abrirExpediente(exps[0]);
   else notif('Expediente no encontrado');
@@ -140,15 +147,15 @@ window.cargarPendientes = async function () {
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div>
-            <div style="font-size:15px;font-weight:700;color:#03045E">${p.nombre_paciente}</div>
-            <div style="font-size:12px;color:#0096C7;margin-top:2px">${p.fecha ? p.fecha + ' · ' : ''} ${p.hora} · Tel: ${p.telefono_paciente || '—'}</div>
-            <div style="font-size:12px;color:#0077B6;margin-top:4px;font-style:italic">"${p.motivo || ''}"</div>
+            <div style="font-size:15px;font-weight:700;color:#03045E">${escapar(p.nombre_paciente)}</div>
+            <div style="font-size:12px;color:#0096C7;margin-top:2px">${p.fecha ? escapar(p.fecha) + ' · ' : ''} ${escapar(p.hora)} · Tel: ${escapar(p.telefono_paciente || '—')}</div>
+            <div style="font-size:12px;color:#0077B6;margin-top:4px;font-style:italic">"${escapar(p.motivo || '')}"</div>
           </div>
           <span class="badge pendiente">Pendiente</span>
         </div>
         <div class="action-btns" style="margin-top:12px">
-          <button class="btn-sm btn-confirmar" onclick="accionPendiente(${p.id},'confirmada')">✓ Confirmar</button>
-          <button class="btn-sm btn-rechazar" onclick="accionPendiente(${p.id},'cancelada')">✗ Rechazar</button>
+          <button class="btn-sm btn-confirmar" onclick="accionPendiente(${Number(p.id)},'confirmada')">✓ Confirmar</button>
+          <button class="btn-sm btn-rechazar" onclick="accionPendiente(${Number(p.id)},'cancelada')">✗ Rechazar</button>
         </div>
       </div>`).join('');
   }
@@ -160,6 +167,11 @@ window.accionPendiente = async function (id, estado) {
   window.cargarPendientes();
   window.cargarCitas();
 };
+
+// Las citas del dia que se estan mostrando. Los botones de cada fila
+// mandan solo el id: antes interpolaban el nombre del paciente dentro
+// del onclick, y ahi el texto de la base terminaba siendo codigo.
+let citasDelDia = [];
 
 let allExpedientes = [];
 window.cargarExpedientes = async function () {
@@ -176,15 +188,15 @@ function renderExpedientes(lista) {
     return;
   }
   el.innerHTML = lista.map((e) => `
-    <div class="card" style="cursor:pointer" onclick="abrirExpediente(${JSON.stringify(e).replace(/"/g, '&quot;')})">
+    <div class="card" style="cursor:pointer" onclick="abrirExpedientePorId('${escapar(e.id)}')">
       <div style="display:flex;align-items:center;gap:12px">
-        <div class="avatar">${iniciales(e.nombre)}</div>
+        <div class="avatar">${escapar(iniciales(e.nombre))}</div>
         <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:#03045E">${e.nombre}</div>
-          <div style="font-size:12px;color:#0096C7">${e.edad} años · ${e.telefono || '—'}</div>
+          <div style="font-size:15px;font-weight:700;color:#03045E">${escapar(e.nombre)}</div>
+          <div style="font-size:12px;color:#0096C7">${escapar(e.edad)} años · ${escapar(e.telefono || '—')}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:12px;font-weight:700;color:#0077B6">${e.visitas || 0} visitas</div>
+          <div style="font-size:12px;font-weight:700;color:#0077B6">${Number(e.visitas) || 0} visitas</div>
           <div style="font-size:11px;color:#adb5bd;margin-top:2px">Ver →</div>
         </div>
       </div>
@@ -195,6 +207,13 @@ window.filtrarExpedientes = function (v) {
   const value = (v || '').trim();
   const filtro = value ? allExpedientes.filter((e) => e.nombre.toLowerCase().includes(value.toLowerCase()) || (e.identidad || '').includes(value)) : allExpedientes;
   renderExpedientes(filtro);
+};
+
+// El listado manda el id y el expediente sale de lo ya cargado. Antes
+// incrustaba el registro entero serializado dentro del onclick.
+window.abrirExpedientePorId = function (id) {
+  const exp = allExpedientes.find((e) => String(e.id) === String(id));
+  if (exp) window.abrirExpediente(exp);
 };
 
 window.abrirExpediente = async function (exp) {
@@ -213,15 +232,15 @@ function renderPacHeader(exp) {
   if (!target) return;
   target.innerHTML = `
     <div class="pac-header-row">
-      <div class="pac-avatar-lg">${iniciales(exp.nombre)}</div>
+      <div class="pac-avatar-lg">${escapar(iniciales(exp.nombre))}</div>
       <div>
-        <div class="pac-nombre">${exp.nombre}</div>
-        <div class="pac-sub">${exp.edad} años · ${exp.identidad || '—'} · 📞 ${exp.telefono || '—'}</div>
+        <div class="pac-nombre">${escapar(exp.nombre)}</div>
+        <div class="pac-sub">${escapar(exp.edad)} años · ${escapar(exp.identidad || '—')} · 📞 ${escapar(exp.telefono || '—')}</div>
       </div>
     </div>
     <div class="pac-stats">
-      <div class="pac-stat"><div class="num">${exp.visitas || 0}</div><div class="lbl">Visitas</div></div>
-      <div class="pac-stat"><div class="num" style="font-size:14px">${exp.ultima_visita || '—'}</div><div class="lbl">Última visita</div></div>
+      <div class="pac-stat"><div class="num">${Number(exp.visitas) || 0}</div><div class="lbl">Visitas</div></div>
+      <div class="pac-stat"><div class="num" style="font-size:14px">${escapar(exp.ultima_visita || '—')}</div><div class="lbl">Última visita</div></div>
     </div>`;
 }
 
@@ -242,17 +261,17 @@ function renderVisita(v, abierta) {
   return `<div class="visita-card">
     <div class="visita-header" onclick="toggleVisita(this)">
       <div>
-        <div class="visita-fecha">${v.fecha || 'Sin fecha'}</div>
-        <div class="visita-hora">${v.hora || ''} · ${tratamientos[0] || 'Consulta'}</div>
+        <div class="visita-fecha">${escapar(v.fecha || 'Sin fecha')}</div>
+        <div class="visita-hora">${escapar(v.hora || '')} · ${escapar(tratamientos[0] || 'Consulta')}</div>
       </div>
       <span style="font-size:18px;color:#adb5bd">${abierta ? '▲' : '▼'}</span>
     </div>
     <div class="visita-body${abierta ? ' open' : ''}">
-      ${v.diagnostico ? `<div class="visita-section"><div class="visita-section-title">Diagnóstico</div><div class="visita-text">${v.diagnostico}</div></div>` : ''}
-      ${tratamientos.length ? `<div class="visita-section"><div class="visita-section-title">Tratamientos</div><div>${tratamientos.map((t) => `<span class="visita-chip chip-trat">${t}</span>`).join('')}</div></div>` : ''}
-      ${medicamentos.length ? `<div class="visita-section"><div class="visita-section-title">Medicamentos</div><div>${medicamentos.map((m) => `<span class="visita-chip chip-med">${m}</span>`).join('')}</div></div>` : ''}
-      ${v.plan ? `<div class="visita-section"><div class="visita-section-title">Plan / próxima cita</div><div class="visita-text">${v.plan}</div></div>` : ''}
-      ${v.notas ? `<div class="visita-section"><div class="visita-section-title">Notas</div><div class="exp-nota">${v.notas}</div></div>` : ''}
+      ${v.diagnostico ? `<div class="visita-section"><div class="visita-section-title">Diagnóstico</div><div class="visita-text">${escapar(v.diagnostico)}</div></div>` : ''}
+      ${tratamientos.length ? `<div class="visita-section"><div class="visita-section-title">Tratamientos</div><div>${tratamientos.map((t) => `<span class="visita-chip chip-trat">${escapar(t)}</span>`).join('')}</div></div>` : ''}
+      ${medicamentos.length ? `<div class="visita-section"><div class="visita-section-title">Medicamentos</div><div>${medicamentos.map((m) => `<span class="visita-chip chip-med">${escapar(m)}</span>`).join('')}</div></div>` : ''}
+      ${v.plan ? `<div class="visita-section"><div class="visita-section-title">Plan / próxima cita</div><div class="visita-text">${escapar(v.plan)}</div></div>` : ''}
+      ${v.notas ? `<div class="visita-section"><div class="visita-section-title">Notas</div><div class="exp-nota">${escapar(v.notas)}</div></div>` : ''}
     </div>
   </div>`;
 }
@@ -277,6 +296,7 @@ function abrirModalDiagnostico() {
   if (!window.expedienteActual) return;
   const nombre = document.getElementById('modal-pac-nombre');
   const sub = document.getElementById('modal-pac-sub');
+  // textContent, no innerHTML: aca el nombre entra como texto y punto.
   if (nombre) nombre.textContent = 'Registrar visita — ' + window.expedienteActual.nombre;
   if (sub) sub.textContent = fechaHoy() + ' · ' + horaAhora();
   ['m-diagnostico', 'm-medicamentos', 'm-plan', 'm-notas', 'm-trat-otro'].forEach((id) => {

@@ -24,6 +24,16 @@ export function showScreen(s) {
   if (target) target.classList.add('active');
 }
 
+// Neutraliza el texto que viene de la base antes de meterlo en un
+// innerHTML. Sin esto, un nombre o un diagnostico con etiquetas dentro
+// se interpreta como marcado: quien escribe el dato elige que codigo
+// corre en la pantalla de la doctora.
+const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+export function escapar(valor) {
+  return String(valor ?? '').replace(/[&<>"']/g, (c) => ESCAPES[c]);
+}
+
 export function labelEstado(e) {
   return {
     pendiente: 'Pendiente',

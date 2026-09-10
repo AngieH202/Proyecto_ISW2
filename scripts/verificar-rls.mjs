@@ -11,8 +11,15 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const h = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
 
 let fallos = 0;
-const ok = (t, d = '') => console.log(`  ✓ ${t}${d ? '  — ' + d : ''}`);
-const mal = (t, d = '') => { fallos++; console.log(`  ✗ ${t}${d ? '  — ' + d : ''}`); };
+
+// Lo que se imprime viene de respuestas de la red. Un salto de linea
+// dentro de un mensaje del servidor alcanzaria para inventar lineas en
+// la salida y hacerla decir lo contrario de lo que paso, asi que los
+// caracteres de control se quitan y el largo se acota.
+const limpio = (t) => String(t ?? '').replace(/[\p{Cc}\p{Cf}]/gu, ' ').slice(0, 200);
+
+const ok = (t, d = '') => console.log(`  ✓ ${limpio(t)}${d ? '  — ' + limpio(d) : ''}`);
+const mal = (t, d = '') => { fallos++; console.log(`  ✗ ${limpio(t)}${d ? '  — ' + limpio(d) : ''}`); };
 
 // ── 1. anon no debe leer las tablas ──────────────────────────────────
 console.log('\nLectura directa con la anon key');

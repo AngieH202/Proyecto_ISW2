@@ -6,7 +6,28 @@
 // Sale con codigo 1 si algo falla, para poder encadenarlo. No modifica
 // nada: son todas peticiones de lectura.
 
-const BASE = (process.argv[2] || 'https://www.angiehernndz.lat').replace(/\/$/, '');
+// El destino puede venir por argumento, asi que se valida antes de
+// usarlo: sin esto, cualquier cadena termina en un fetch y el script
+// sirve para pegarle a lo que sea desde donde corra.
+const POR_DEFECTO = 'https://www.angiehernndz.lat';
+
+function destino(valor) {
+  if (!valor) return POR_DEFECTO;
+  let url;
+  try {
+    url = new URL(valor);
+  } catch {
+    console.error(`No es una URL valida: ${String(valor).slice(0, 100)}`);
+    process.exit(2);
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    console.error(`Protocolo no permitido: ${url.protocol}`);
+    process.exit(2);
+  }
+  return url.origin;
+}
+
+const BASE = destino(process.argv[2]).replace(/\/$/, '');
 
 const resultados = [];
 const ok = (g, n, d = '') => resultados.push({ g, n, bien: true, d });

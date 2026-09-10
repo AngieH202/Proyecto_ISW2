@@ -217,6 +217,64 @@ describe('buscar expedientes', () => {
   });
 });
 
+describe('los datos de la base no se ejecutan como código', () => {
+  // El panel arma su HTML con innerHTML. Quien escribe un nombre o un
+  // motivo elige texto, no marcado: si no se escapa, elige qué corre en
+  // la pantalla de la doctora, que es la sesión con más permisos.
+  const ATAQUE = '<img src=x onerror="alert(1)">';
+
+  // Las citas se meten directo en la base falsa, sin pasar por una
+  // escritura: hay que tirar la caché a mano para que se relean.
+  const recargarCitas = async () => {
+    globalThis.cacheLimpiar();
+    await globalThis.cargarCitas();
+  };
+
+  test('un nombre con etiquetas dentro sale escapado, no como HTML', async () => {
+    db.citas.push({
+      id: 90, fecha: HOY, hora: '9:15 AM', estado: 'pendiente',
+      nombre_paciente: ATAQUE, identidad: '0000-0000-00000',
+      telefono_paciente: '0000-0000', motivo: 'Consulta'
+    });
+    await recargarCitas();
+    const html = el('citas-lista').innerHTML;
+
+    // El nombre entero aparece, pero con los signos neutralizados: es
+    // texto que se lee, no una etiqueta que el navegador ejecute.
+    assert.ok(!html.includes('<img'), 'la etiqueta no puede quedar viva');
+    assert.ok(html.includes('&lt;img src=x onerror=&quot;alert(1)&quot;&gt;'), 'tiene que verse como texto');
+  });
+
+  test('el motivo tampoco', async () => {
+    db.citas.push({
+      id: 91, fecha: HOY, hora: '8:30 AM', estado: 'pendiente',
+      nombre_paciente: 'Ana Reyes', identidad: '0102-2000-11111',
+      telefono_paciente: '5555-4444', motivo: '<script>robar()</script>'
+    });
+    globalThis.cacheLimpiar();
+    await globalThis.cargarPendientes();
+
+    assert.ok(!el('pendientes-lista').innerHTML.includes('<script>'));
+  });
+
+  test('los botones de cada fila mandan el id, no el nombre', async () => {
+    // Interpolar el nombre dentro del onclick metía el texto de la base
+    // en medio de código: unas comillas bien puestas y se ejecuta.
+    await recargarCitas();
+    const html = el('citas-lista').innerHTML;
+
+    assert.match(html, /onclick="marcarAtendida\(\d+\)"/);
+    assert.ok(!html.includes('marcarAtendida(90,'), 'no viaja ningún texto en el onclick');
+  });
+
+  test('y aun así la doctora puede atender esa cita', async () => {
+    // El nombre se resuelve por id contra lo ya cargado.
+    await globalThis.marcarAtendida(90);
+
+    assert.equal(cita(90).estado, 'atendida');
+  });
+});
+
 describe('el portal no baja el token al navegador', () => {
   test('todas las tablas se piden al proxy /api/db', () => {
     const aSupabase = peticiones.filter((p) => p.ruta.startsWith('/rest/v1/') && !p.ruta.includes('/rpc/'));

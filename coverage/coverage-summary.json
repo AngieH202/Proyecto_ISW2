@@ -1,54 +1,54 @@
 {
   "total": {
     "lines": {
-      "total": 1192,
-      "covered": 1100,
+      "total": 1222,
+      "covered": 1127,
       "skipped": 0,
-      "pct": 92.28
+      "pct": 92.23
     },
     "functions": {
-      "total": 99,
-      "covered": 80,
+      "total": 104,
+      "covered": 84,
       "skipped": 0,
-      "pct": 80.81
+      "pct": 80.77
     },
     "branches": {
-      "total": 249,
-      "covered": 195,
+      "total": 256,
+      "covered": 200,
       "skipped": 0,
-      "pct": 78.31
+      "pct": 78.13
     },
     "statements": {
-      "total": 1192,
-      "covered": 1100,
+      "total": 1222,
+      "covered": 1127,
       "skipped": 0,
-      "pct": 92.28
+      "pct": 92.23
     }
   },
   "assets/js/admin.js": {
     "lines": {
-      "total": 397,
-      "covered": 358,
+      "total": 417,
+      "covered": 375,
       "skipped": 0,
-      "pct": 90.18
+      "pct": 89.93
     },
     "functions": {
-      "total": 39,
-      "covered": 27,
+      "total": 42,
+      "covered": 29,
       "skipped": 0,
-      "pct": 69.23
+      "pct": 69.05
     },
     "branches": {
-      "total": 92,
-      "covered": 58,
+      "total": 96,
+      "covered": 61,
       "skipped": 0,
-      "pct": 63.04
+      "pct": 63.54
     },
     "statements": {
-      "total": 397,
-      "covered": 358,
+      "total": 417,
+      "covered": 375,
       "skipped": 0,
-      "pct": 90.18
+      "pct": 89.93
     }
   },
   "assets/js/app.js": {
@@ -235,26 +235,26 @@
   },
   "assets/js/modules/utils.js": {
     "lines": {
-      "total": 47,
-      "covered": 47,
+      "total": 57,
+      "covered": 57,
       "skipped": 0,
       "pct": 100
     },
     "functions": {
-      "total": 11,
-      "covered": 10,
+      "total": 13,
+      "covered": 12,
       "skipped": 0,
-      "pct": 90.91
+      "pct": 92.31
     },
     "branches": {
-      "total": 15,
-      "covered": 13,
+      "total": 18,
+      "covered": 15,
       "skipped": 0,
-      "pct": 86.67
+      "pct": 83.33
     },
     "statements": {
-      "total": 47,
-      "covered": 47,
+      "total": 57,
+      "covered": 57,
       "skipped": 0,
       "pct": 100
     }
