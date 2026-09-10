@@ -91,31 +91,54 @@ end $$;
 --
 -- Una cita ya atendida no se cancela: paso, y borrarla del historial
 -- seria falsear lo que ocurrio.
+-- El nombre se usa de respaldo para las citas viejas, creadas antes de
+-- que el cliente guardara identidad: esas tienen identidad nula y sin
+-- este respaldo se ven en la consulta de estado --que ya cruza por
+-- nombre-- pero no se pueden cancelar. Es el mismo criterio que ya usa
+-- crear_solicitud.
+--
+-- El nombre no se recibe como parametro: sale del expediente de esa
+-- identidad. Asi sigue haciendo falta la identidad correcta, y no
+-- alcanza con saber como se llama alguien.
 create or replace function public.cancelar_mi_cita(
   p_identidad text, p_fecha date, p_hora text
 ) returns text
 language plpgsql security definer set search_path = public as $$
-declare v_estado text;
+declare
+  v_id     bigint;
+  v_estado text;
+  v_nombre text;
 begin
   if p_identidad is null or btrim(p_identidad) = '' then
     return 'no_encontrada';
   end if;
 
-  select c.estado into v_estado
+  select e.nombre into v_nombre
+  from public.expedientes e
+  where e.identidad = p_identidad
+  limit 1;
+
+  select c.id, c.estado into v_id, v_estado
   from public.citas c
   where c.fecha = p_fecha
     and c.hora = p_hora
-    and c.identidad = p_identidad
+    and (
+      c.identidad = p_identidad
+      or (c.identidad is null and v_nombre is not null and c.nombre_paciente = v_nombre)
+    )
+  -- Si hubiera dos, la que tiene identidad manda: es la unica que
+  -- identifica al paciente sin lugar a dudas.
+  order by case when c.identidad = p_identidad then 0 else 1 end,
+           case when c.estado in ('pendiente','confirmada') then 0 else 1 end
   limit 1;
 
-  if v_estado is null                                       then return 'no_encontrada'; end if;
-  if v_estado in ('cancelada', 'cancelada_paciente')        then return 'ya_cancelada';   end if;
-  if v_estado in ('atendida', 'nopresento')                 then return 'no_se_puede';    end if;
+  if v_id is null                                    then return 'no_encontrada'; end if;
+  if v_estado in ('cancelada', 'cancelada_paciente') then return 'ya_cancelada';   end if;
+  if v_estado in ('atendida', 'nopresento')          then return 'no_se_puede';    end if;
 
   update public.citas
   set estado = 'cancelada_paciente'
-  where fecha = p_fecha and hora = p_hora and identidad = p_identidad
-    and estado in ('pendiente', 'confirmada');
+  where id = v_id;
 
   return 'cancelada';
 end $$;

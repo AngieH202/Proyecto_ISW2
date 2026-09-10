@@ -183,6 +183,40 @@ describe('cancelar desde el propio flujo de agendamiento', () => {
   });
 });
 
+describe('las citas viejas, sin identidad guardada', () => {
+  // Antes el cliente no guardaba la identidad en la cita. Esas citas se
+  // ven en la consulta de estado --que cruza por nombre-- así que
+  // también tienen que poder cancelarse: si no, el paciente ve el botón
+  // y el botón no hace nada.
+  const HORA_VIEJA = '11:30 AM';
+
+  test('se pueden cancelar cruzando por el nombre del expediente', async () => {
+    db.citas.push({
+      id: 600, fecha: DIA, hora: HORA_VIEJA, estado: 'pendiente',
+      nombre_paciente: MARIA.nombre, identidad: null, motivo: 'Consulta'
+    });
+
+    const r = await sbRpc('cancelar_mi_cita', { p_identidad: MARIA.id, p_fecha: DIA, p_hora: HORA_VIEJA });
+
+    assert.equal(r.data, 'cancelada');
+    assert.equal(citaEn(HORA_VIEJA).estado, 'cancelada_paciente');
+  });
+
+  test('y aun así hace falta la identidad correcta', async () => {
+    // El nombre sale del expediente de esa identidad: no alcanza con
+    // saber cómo se llama alguien.
+    db.citas.push({
+      id: 601, fecha: DIA, hora: '12:15 PM', estado: 'pendiente',
+      nombre_paciente: MARIA.nombre, identidad: null, motivo: 'Consulta'
+    });
+
+    const r = await sbRpc('cancelar_mi_cita', { p_identidad: CARLOS.id, p_fecha: DIA, p_hora: '12:15 PM' });
+
+    assert.equal(r.data, 'no_encontrada');
+    assert.equal(citaEn('12:15 PM').estado, 'pendiente');
+  });
+});
+
 describe('una cita ya atendida no se cancela', () => {
   test('devuelve no_se_puede y el historial queda intacto', async () => {
     // Borrarla del historial sería falsear lo que ocurrió.

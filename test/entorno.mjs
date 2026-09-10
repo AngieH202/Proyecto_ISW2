@@ -138,7 +138,17 @@ export function instalarBaseFalsa({ tablas = false } = {}) {
     // baja de una cita ajena.
     cancelar_mi_cita({ p_identidad, p_fecha, p_hora }) {
       if (!p_identidad?.trim()) return 'no_encontrada';
-      const cita = db.citas.find((c) => c.fecha === p_fecha && c.hora === p_hora && c.identidad === p_identidad);
+
+      // El nombre sale del expediente de esa identidad, y sólo sirve de
+      // respaldo para las citas viejas que no la guardaron. Mismo
+      // criterio que crear_solicitud.
+      const nombre = db.expedientes.find((e) => e.identidad === p_identidad)?.nombre;
+      const suya = (c) => c.identidad === p_identidad
+        || (!c.identidad && nombre && c.nombre_paciente === nombre);
+
+      const cita = db.citas
+        .filter((c) => c.fecha === p_fecha && c.hora === p_hora && suya(c))
+        .sort((a, b) => (a.identidad === p_identidad ? 0 : 1) - (b.identidad === p_identidad ? 0 : 1))[0];
 
       if (!cita) return 'no_encontrada';
       if (CANCELADOS.includes(cita.estado)) return 'ya_cancelada';
