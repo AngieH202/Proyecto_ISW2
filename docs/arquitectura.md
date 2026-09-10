@@ -3,6 +3,10 @@
 Sistema de citas odontológicas para la clínica de la Dra. Belkis Suisse.
 Proyecto ISW II.
 
+Las decisiones estructurales están registradas aparte, en
+[`docs/adr/`](adr/): [ADR-001 — persistencia](adr/ADR-001-persistencia.md) y
+[ADR-002 — autenticación](adr/ADR-002-auth.md).
+
 ---
 
 ## Nivel 1 — Contexto
@@ -16,13 +20,13 @@ C4Context
     Person(paciente, "Paciente", "Registra sus datos, elige día y hora, y consulta el estado de su cita con su número de identidad")
     Person(doctora, "Doctora", "Revisa la agenda del día, confirma o rechaza solicitudes y lleva el expediente clínico de cada paciente")
 
-    System(dentaagenda, "DentaAgenda", "Aplicación web estática de agendamiento de citas odontológicas")
+    System(dentaagenda, "DentaAgenda", "Aplicación web de agendamiento de citas odontológicas: sitio estático más funciones serverless")
 
     System_Ext(supabase, "Supabase", "Backend como servicio: PostgREST sobre PostgreSQL más autenticación GoTrue")
 
     Rel(paciente, dentaagenda, "Solicita cita y consulta su estado", "HTTPS")
     Rel(doctora, dentaagenda, "Administra agenda, solicitudes y expedientes", "HTTPS")
-    Rel(dentaagenda, supabase, "Lee y escribe citas, expedientes y visitas clínicas", "REST / JSON")
+    Rel(dentaagenda, supabase, "Funciones RPC para el paciente; tablas para la doctora, firmadas del lado del servidor", "REST / JSON")
 
     UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="1")
 ```
@@ -31,8 +35,9 @@ C4Context
 
 ## Nivel 2 — Contenedores
 
-Las piezas desplegables. No hay servidor de aplicación: todo se sirve como
-archivos estáticos y el navegador es el único entorno de ejecución propio.
+Las piezas desplegables. El sitio sigue siendo estático, pero ya no es lo
+único: hay un puñado de funciones serverless que existen para que el token
+de la doctora nunca baje al navegador.
 
 ```mermaid
 C4Container
@@ -42,34 +47,46 @@ C4Container
     Person(doctora, "Doctora", "Gestiona agenda y expedientes")
 
     Container_Boundary(cliente, "Navegador - sitio estático") {
-        Container(landing, "Landing", "landing.html", "Página de presentación con estilos embebidos. Sus enlaces de entrada apuntan a index.html con el parámetro app igual a 1")
-        Container(spa, "Aplicación", "index.html", "Marcado de las cuatro pantallas. Un script clásico en el head redirige a la landing si falta el parámetro app")
-        Container(css, "Hoja de estilos", "assets/css/app.css", "Estilos de la aplicación")
-        Container(js, "Lógica de la aplicación", "assets/js - módulos ES", "Entrypoint app.js más seis módulos. Sin bundler ni dependencias")
-        Container(sw, "Service worker", "sw.js", "Precarga los estáticos y guarda las últimas respuestas de datos. Es lo que deja la app usable sin conexión")
+        Container(landing, "Landing", "landing.html", "Página de presentación. Sus enlaces de entrada apuntan a index.html con el parámetro app igual a 1")
+        Container(spa, "Aplicación pública", "index.html", "Login, registro del paciente y flujo de agendamiento. Se sirve sin sesión, así que no lleva nada del portal")
+        Container(js, "Lógica pública", "assets/js - app.js y módulos", "Flujo del paciente. Solo llama funciones RPC")
+        Container(adminjs, "Panel de la doctora", "assets/js/admin.js", "Agenda, pendientes y expedientes. Solo se descarga detrás de la sesión")
+        Container(sw, "Service worker", "sw.js", "Precarga los estáticos y guarda las últimas respuestas. Deja la app usable sin conexión")
+    }
+
+    Container_Boundary(serverless, "Funciones serverless - /api") {
+        Container(sesion, "Sesión", "api/session.js", "Cambia el access_token por una cookie HttpOnly firmada, y la borra al salir")
+        Container(portal, "Portal", "api/admin.js", "Sirve el marcado del panel solo si la cookie es válida")
+        Container(proxy, "Proxy de datos", "api/db.js", "Firma con el token de la doctora las consultas a las tablas permitidas")
     }
 
     System_Boundary(sb, "Supabase") {
         Container(gotrue, "Auth API", "GoTrue - auth/v1", "Login por email y contraseña de la cuenta de la doctora")
-        Container(postgrest, "REST API", "PostgREST - rest/v1", "CRUD sobre las tablas, autenticado con la anon key")
-        ContainerDb(pg, "Base de datos", "PostgreSQL", "Tablas citas, expedientes y visitas_clinicas")
+        Container(postgrest, "REST API", "PostgREST - rest/v1", "Tablas y funciones RPC, con RLS por rol")
+        ContainerDb(pg, "Base de datos", "PostgreSQL", "Tablas citas, expedientes y visitas_clinicas, más las funciones que usa el paciente")
     }
 
-    Rel(paciente, landing, "Entra al sitio", "HTTPS")
-    Rel(doctora, landing, "Entra al sitio", "HTTPS")
+    Rel(paciente, spa, "Agenda y consulta", "HTTPS")
+    Rel(doctora, spa, "Inicia sesión", "HTTPS")
     Rel(landing, spa, "Entrar a la app", "enlace con app igual a 1")
-    Rel(spa, css, "Carga", "link rel stylesheet")
     Rel(spa, js, "Carga y expone handlers en window", "script type module")
     Rel(spa, sw, "Registra", "navigator.serviceWorker")
-    Rel(js, sw, "Sus peticiones pasan por acá", "intercepta fetch")
-    Rel(sw, gotrue, "Deja pasar sin tocar", "nunca se cachea")
-    Rel(sw, postgrest, "Red primero, caché de respaldo", "solo GET")
     Rel(js, gotrue, "Autentica a la doctora", "POST token")
-    Rel(js, postgrest, "Consulta y modifica registros", "GET, POST, PATCH")
+    Rel(js, sesion, "Entrega el token una sola vez", "POST /api/session")
+    Rel(doctora, portal, "Abre el panel", "GET /admin")
+    Rel(portal, adminjs, "Sirve el marcado privado", "solo con cookie válida")
+    Rel(adminjs, proxy, "Consulta y modifica registros", "GET, POST, PATCH /api/db")
+    Rel(proxy, postgrest, "Reenvía firmado con el token de la doctora", "rol autenticado")
+    Rel(js, postgrest, "Solo funciones RPC", "anon no toca tablas")
     Rel(postgrest, pg, "Lee y escribe", "SQL")
 
     UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="1")
 ```
+
+Las dos mitades no comparten nada más que el dominio: el paciente entra por
+funciones RPC que exponen exactamente lo que esa pantalla necesita, y la
+doctora entra por un proxy que firma del lado del servidor. Ninguna de las
+dos manda credenciales de administración al navegador.
 
 ### Pantallas dentro de `index.html`
 
@@ -95,45 +112,58 @@ C4Component
     title Nivel 3 - Componentes del contenedor assets/js
 
     Container_Boundary(js, "assets/js - módulos ES") {
-        Component(app, "app.js", "Entrypoint", "Panel de la doctora: agenda del día, bandeja de pendientes, listado de expedientes, historial de visitas y modal de diagnóstico")
+        Component(app, "app.js", "Entrypoint público", "Carga los módulos del paciente por su efecto: cada uno publica en window lo que el HTML nombra")
+        Component(admin, "admin.js", "Entrypoint privado", "Panel de la doctora: agenda del día, pendientes, expedientes, historial y registro de visitas")
         Component(auth, "auth.js", "Módulo", "setRole, loginDoctora, loginPaciente, consultarEstado y logout")
-        Component(patient, "patient.js", "Módulo", "Calendario semanal, slots por día, pasos 1 a 4 del flujo y envío de la solicitud")
-        Component(api, "api.js", "Módulo", "sbGet, sbPost, sbPatch, sbUpsert y authLogin sobre fetch. Cachea las lecturas e invalida al escribir")
-        Component(cache, "cache.js", "Módulo", "Caché en memoria con vencimiento por entrada, invalidación por tabla y métricas de aciertos")
-        Component(utils, "utils.js", "Módulo", "notif, showError, hideError, showScreen, labelEstado, iniciales, fechaHoy y horaAhora")
-        Component(config, "config.js", "Módulo", "URL y anon key de Supabase, usuario y email de la doctora, horarios base y nombres de días y meses")
+        Component(sesion, "sesion.js", "Módulo", "abrirSesion, cerrarSesion y haySesion contra /api/session")
+        Component(patient, "patient.js", "Módulo", "Calendario semanal, slots por día, pasos 1 a 4 y envío de la solicitud")
+        Component(api, "api.js", "Módulo", "sbRpc, sbGet, sbPost, sbPatch y authLogin. Elige destino según haya sesión o no")
+        Component(cache, "cache.js", "Módulo", "Caché en memoria con vencimiento por entrada e invalidación por tabla")
+        Component(utils, "utils.js", "Módulo", "notif, showError, showScreen, labelEstado, iniciales, fechas y escapar")
+        Component(config, "config.js", "Módulo", "URL y anon key, usuario y email de la doctora, horarios base y nombres de días y meses")
     }
 
     System_Ext(supabase, "Supabase", "REST API y Auth API")
+    System_Ext(proxy, "/api/db", "Proxy con sesión")
 
     Rel(app, auth, "Importa por efecto", "registra handlers")
     Rel(app, patient, "Importa por efecto", "registra handlers")
-    Rel(app, api, "Consulta datos")
-    Rel(app, utils, "Usa helpers")
+    Rel(admin, api, "Consulta y modifica registros")
+    Rel(admin, utils, "Usa helpers y escapa datos")
+    Rel(admin, sesion, "Cerrar sesión")
     Rel(auth, patient, "setPacienteData y resetSeleccion")
-    Rel(auth, api, "Autentica y consulta")
-    Rel(auth, utils, "Usa helpers")
+    Rel(auth, sesion, "Abre la sesión con el token")
+    Rel(auth, api, "Autentica y llama RPC")
     Rel(auth, config, "Lee credenciales")
-    Rel(patient, api, "Consulta y crea citas")
-    Rel(patient, utils, "Usa helpers")
+    Rel(patient, api, "Llama RPC de horarios y solicitud")
     Rel(patient, config, "Lee horarios base")
-    Rel(api, config, "Lee URL y anon key")
     Rel(api, cache, "Guarda lecturas e invalida al escribir")
-    Rel(api, supabase, "fetch", "HTTPS")
+    Rel(api, supabase, "RPC y login", "HTTPS")
+    Rel(api, proxy, "Tablas, solo con sesión", "HTTPS")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
+
+`api.js` tiene un solo interruptor: si existe `window.__sesion` habla con
+`/api/db`, y si no, con Supabase y únicamente por RPC. Ese interruptor es lo
+que mantiene separadas las dos mitades sin duplicar el cliente HTTP.
 
 ### Tamaño de cada componente
 
 | Archivo | Líneas | Responsabilidad |
 | --- | ---: | --- |
-| `assets/js/app.js` | 337 | Entrypoint y todo el panel de la doctora |
-| `assets/js/modules/patient.js` | 267 | Flujo de agendamiento del paciente |
-| `assets/js/modules/auth.js` | 164 | Login, roles y consulta de estado |
-| `assets/js/modules/utils.js` | 47 | Helpers de UI y formato |
-| `assets/js/modules/api.js` | 44 | Cliente HTTP de Supabase |
+| `assets/js/admin.js` | 417 | Panel de la doctora, detrás de la sesión |
+| `assets/js/modules/patient.js` | 293 | Flujo de agendamiento del paciente |
+| `assets/js/modules/auth.js` | 191 | Login, roles y consulta de estado |
+| `assets/js/modules/api.js` | 126 | Cliente HTTP: RPC, tablas y caché |
+| `assets/js/modules/cache.js` | 73 | Caché en memoria con vencimiento |
+| `assets/js/modules/utils.js` | 57 | Helpers de UI, formato y escapado |
+| `assets/js/modules/sesion.js` | 36 | Ciclo de vida de la cookie de sesión |
+| `assets/js/app.js` | 20 | Entrypoint público |
 | `assets/js/modules/config.js` | 9 | Constantes |
+
+Del lado serverless: `api/db.js` (67), `api/health.js` (73), `api/admin.js`
+(61), `api/session.js` (54) y `api/_sesion.js` (47), que valida la cookie.
 
 ### El puente hacia `window`
 
@@ -225,13 +255,23 @@ que una cita `nopresento` sigue bloqueando su horario.
 
 ## Decisiones de arquitectura
 
+Las dos estructurales están registradas como ADR, con su contexto y sus
+consecuencias completas:
+
+- [**ADR-001**](adr/ADR-001-persistencia.md) — Usar Postgres gestionado con
+  RLS y funciones RPC en vez de un backend propio.
+- [**ADR-002**](adr/ADR-002-auth.md) — Guardar la sesión de la doctora en una
+  cookie HttpOnly emitida por el servidor, en vez del token en el navegador.
+
+El resto son decisiones menores, que no ameritan un documento propio:
+
 | Decisión | Motivo | Costo que acepta |
 | --- | --- | --- |
-| Sitio estático, sin backend propio | Nada que desplegar ni mantener; publicable en GitHub Pages | Toda la lógica y las credenciales quedan del lado del cliente |
-| Módulos ES nativos, sin bundler | Cero dependencias y cero paso de build | Ya no se puede abrir con doble clic: los módulos exigen `http://`, no `file://` |
+| Módulos ES nativos, sin bundler | Cero dependencias y cero paso de build | No se puede abrir con doble clic: los módulos exigen `http://`, no `file://` |
 | Handlers en `onclick` dentro del HTML | Es el marcado original, migrarlo era un cambio aparte | Obliga al puente hacia `window` descrito arriba |
 | Landing y app en archivos separados | La landing carga sin esperar la lógica de la app | Hace falta el parámetro `app=1` y el redirect en el `<head>` |
-| Supabase como backend | Base de datos y API REST sin escribir servidor | El acceso a datos depende por completo de cómo estén las políticas RLS |
+| Panel en `admin.js`, fuera de `index.html` | `index.html` se sirve sin sesión; el marcado privado no debe viajar a quien no entró | Una petición más al abrir el portal |
+| Tests con el runner nativo de Node | Cero dependencias, como el resto del proyecto | Hay que pasar globs en los scripts, y expandirlos pide Node 21 o más |
 
 ---
 
@@ -239,22 +279,20 @@ que una cita `nopresento` sigue bloqueando su horario.
 
 Puntos abiertos, en orden de importancia:
 
-1. **El control de acceso es decorativo.** `loginDoctora()` valida el usuario
-   contra una constante en el cliente y luego autentica de verdad contra
-   GoTrue — pero el token que devuelve no se usa: *todas* las lecturas y
-   escrituras posteriores van con la anon key. Si las políticas RLS de las
-   tablas no están restringidas, cualquiera con la URL del proyecto puede leer
-   y modificar los expedientes clínicos completos. Es lo primero que conviene
-   revisar antes de usar esto con datos reales de pacientes.
-2. **`citas` y `expedientes` todavía no tienen llave foránea.** Las citas nuevas
+1. **`citas` y `expedientes` todavía no tienen llave foránea.** Las citas nuevas
    ya guardan `identidad`, así que cruzan bien; las viejas siguen cruzándose por
    nombre. Falta rellenar lo histórico y recién ahí poner la FK.
-3. **Fechas y horas se guardan como texto.** `hora` es un literal de slot
+2. **Fechas y horas se guardan como texto.** `hora` es un literal de slot
    (`'9:15 AM'`), lo que fuerza el parseo manual que hace `cargarSlotsDia()`
-   para decidir si un horario ya pasó.
-4. **`app.js` mezcla dos responsabilidades**: es el entrypoint y a la vez todo
-   el panel de la doctora. Partirlo en `doctora.js` y `expedientes.js` dejaría
-   los seis módulos parejos.
+   para decidir si un horario ya pasó. Es el origen del caso raro de las 12:15
+   PM, que hay que probar aparte.
+3. **`admin.js` hace de todo**: agenda, pendientes, expedientes, historial y
+   modal de diagnóstico en un solo archivo de 417 líneas. Partirlo en
+   `agenda.js` y `expedientes.js` dejaría los módulos parejos.
+4. **El expediente se busca por nombre exacto.** `marcarAtendida` cruza
+   `nombre_paciente` contra `nombre`; un nombre escrito distinto no encuentra
+   expediente. El cruce por `identidad`, que las citas ya guardan, es lo que
+   resolvería esto junto con el punto 1.
 5. **`visitas` en `expedientes` sigue siendo un contador denormalizado.** Ya no
    se desincroniza —el cliente escribe un recuento absoluto— pero el dato sigue
    duplicado respecto de `visitas_clinicas`. El trigger de
@@ -331,31 +369,73 @@ no haya quedado nada duplicado.
 
 ---
 
+## Calidad
+
+```mermaid
+flowchart LR
+    dev["git push"] --> ci["GitHub Actions<br/>.github/workflows/main.yml"]
+    ci --> instalar["npm ci --ignore-scripts<br/>versiones fijadas por el lock"]
+    instalar --> tests["npm test<br/>runner nativo de Node"]
+    tests --> cob["npm run cobertura<br/>coverage/lcov.info"]
+    cob --> sonar["SonarCloud<br/>bugs, vulnerabilidades y duplicación"]
+```
+
+**Tests** — 124 casos en [`test/`](../test/), sin dependencias. Cada archivo es
+autocontenido: monta un DOM mínimo y una base falsa que aplica las mismas
+reglas que el SQL, incluido el índice único de `006`. El caso central es
+`doble-reserva`: dos personas no pueden quedarse con el mismo horario, y se
+prueba de las dos puntas.
+
+**Cobertura** — `npm run cobertura` deja `coverage/lcov.info` y
+`coverage/coverage-summary.json`, ambos versionados. Hoy: **92.23% de líneas**
+(1127/1222), 80.77% de funciones, 78.13% de ramas. El script sale con error si
+las líneas bajan del 60%.
+
+**Integración continua** — el workflow instala con `npm ci --ignore-scripts`
+—versiones exactas del lock y sin ejecutar hooks de terceros— y corre la suite
+en Node 24.
+
+---
+
 ## Estructura de archivos
 
 ```
 Proyecto_ISW2/
 ├── landing.html              página de presentación
-├── index.html                marcado de la app y redirect a la landing
+├── index.html                app pública: login y flujo del paciente
 ├── sw.js                     service worker: offline y caché de datos
 ├── manifest.json             metadatos de la PWA
-├── package.json              solo { "type": "module" }
-├── arquitectura.md           este documento
+├── vercel.json               rutas: /login, /admin y las funciones
+├── docs/
+│   ├── arquitectura.md       este documento
+│   └── adr/                  decisiones registradas
+│       ├── ADR-001-persistencia.md
+│       └── ADR-002-auth.md
+├── api/                      funciones serverless
+│   ├── session.js            emite y borra la cookie de sesión
+│   ├── admin.js              sirve el portal solo con sesión válida
+│   ├── db.js                 proxy firmado hacia las tablas
+│   ├── health.js             chequeo de estado
+│   └── _sesion.js            validación de la cookie
 ├── scripts/
-│   └── versionar.mjs         sella los estáticos con el hash del contenido
+│   ├── cobertura.mjs         genera coverage/ y exige el mínimo
+│   ├── versionar.mjs         sella los estáticos con el hash del contenido
+│   ├── verificar-sitio.mjs   audita el sitio en vivo
+│   └── verificar-rls.mjs     comprueba que anon no llegue a las tablas
+├── coverage/                 reportes de cobertura, versionados
+├── test/                     unidad e integración, runner nativo
 ├── migracion/                scripts SQL de la base
 └── assets/
-    ├── icono.svg             icono de la app
-    ├── icono-maskable.svg    variante con zona segura para Android
-    ├── css/
-    │   └── app.css           estilos de la app
+    ├── css/app.css           estilos de la app
     └── js/
-        ├── app.js            entrypoint y panel de la doctora
+        ├── app.js            entrypoint público
+        ├── admin.js          panel de la doctora
         └── modules/
-            ├── config.js     constantes y credenciales
+            ├── config.js     constantes y credenciales públicas
             ├── cache.js      caché en memoria con vencimiento
-            ├── api.js        cliente HTTP de Supabase
-            ├── utils.js      helpers de UI y formato
+            ├── api.js        cliente HTTP: RPC o proxy según la sesión
+            ├── utils.js      helpers de UI, formato y escapado
+            ├── sesion.js     ciclo de vida de la cookie
             ├── auth.js       login, roles y consulta de estado
             └── patient.js    flujo de agendamiento
 ```

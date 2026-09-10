@@ -5,7 +5,7 @@ proyecto de Supabase.
 
 El esquema reproduce el que ya está en producción, con los tipos reales:
 `uuid` en `expedientes` y `visitas_clinicas`, `bigint` correlativo en `citas`.
-El diagrama entidad-relación está en [arquitectura.md](../arquitectura.md).
+El diagrama entidad-relación está en [arquitectura.md](../docs/arquitectura.md).
 
 ## Orden de ejecución
 
@@ -80,7 +80,7 @@ después de aplicar la secuencia y otra vez después de repetirla: los resultado
 tienen que ser idénticos, y todos los conteos en cero.
 
 La aplicación también es idempotente en sus tres caminos de escritura; está
-documentado en [arquitectura.md](../arquitectura.md).
+documentado en [arquitectura.md](../docs/arquitectura.md).
 
 ## Un paso que no es SQL
 

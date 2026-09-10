@@ -46,7 +46,7 @@ datos.
 | Base | PostgreSQL en Supabase, vía PostgREST |
 
 La arquitectura completa, con diagramas C4, está en
-[`arquitectura.md`](arquitectura.md).
+[`docs/arquitectura.md`](docs/arquitectura.md).
 
 ### Decisiones que vale la pena conocer
 
