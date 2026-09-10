@@ -4,7 +4,7 @@ Sistema de citas odontológicas para la clínica de la Dra. Belkis Suisse.
 Proyecto ISW II.
 
 Las decisiones estructurales están registradas aparte, en
-[`docs/adr/`](adr/): [ADR-001 — persistencia](adr/ADR-001-persistencia.md) y
+[`docs/adr/`](adr/): [ADR-001 — evolución](adr/ADR-001-evolucion.md) y
 [ADR-002 — autenticación](adr/ADR-002-auth.md).
 
 ---
@@ -258,8 +258,8 @@ que una cita `nopresento` sigue bloqueando su horario.
 Las dos estructurales están registradas como ADR, con su contexto y sus
 consecuencias completas:
 
-- [**ADR-001**](adr/ADR-001-persistencia.md) — Usar Postgres gestionado con
-  RLS y funciones RPC en vez de un backend propio.
+- [**ADR-001**](adr/ADR-001-evolucion.md) — Evolución de DentaAgenda para
+  mejorar su facilidad de uso.
 - [**ADR-002**](adr/ADR-002-auth.md) — Guardar la sesión de la doctora en una
   cookie HttpOnly emitida por el servidor, en vez del token en el navegador.
 
@@ -409,7 +409,7 @@ Proyecto_ISW2/
 ├── docs/
 │   ├── arquitectura.md       este documento
 │   └── adr/                  decisiones registradas
-│       ├── ADR-001-persistencia.md
+│       ├── ADR-001-evolucion.md
 │       └── ADR-002-auth.md
 ├── api/                      funciones serverless
 │   ├── session.js            emite y borra la cookie de sesión

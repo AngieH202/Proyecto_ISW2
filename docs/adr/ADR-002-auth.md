@@ -3,7 +3,7 @@
 - **Estado:** aceptada
 - **Fecha:** 2026-09-10
 - **Ámbito:** autenticación y sesión
-- **Relacionada:** [ADR-001 — persistencia](ADR-001-persistencia.md)
+- **Relacionada:** [ADR-001 — evolución](ADR-001-evolucion.md)
 
 ## Contexto
 
