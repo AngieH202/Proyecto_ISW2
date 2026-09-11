@@ -5,7 +5,7 @@ Proyecto ISW II.
 
 Las decisiones estructurales están registradas aparte, en
 [`docs/adr/`](adr/): [ADR-001 — evolución](adr/ADR-001-evolucion.md) y
-[ADR-002 — autenticación](adr/ADR-002-auth.md).
+[ADR-002 — experiencia](adr/ADR-002-experiencia.md).
 
 ---
 
@@ -57,7 +57,7 @@ C4Container
     Container_Boundary(serverless, "Funciones serverless - /api") {
         Container(sesion, "Sesión", "api/session.js", "Cambia el access_token por una cookie HttpOnly firmada, y la borra al salir")
         Container(portal, "Portal", "api/admin.js", "Sirve el marcado del panel solo si la cookie es válida")
-        Container(proxy, "Proxy de datos", "api/db.js", "Firma con el token de la doctora las consultas a las tablas permitidas")
+        Container(proxy, "Proxy de datos", "api/db/[tabla].js", "Firma con el token de la doctora las consultas a las tablas permitidas")
     }
 
     System_Boundary(sb, "Supabase") {
@@ -162,7 +162,7 @@ que mantiene separadas las dos mitades sin duplicar el cliente HTTP.
 | `assets/js/app.js` | 20 | Entrypoint público |
 | `assets/js/modules/config.js` | 9 | Constantes |
 
-Del lado serverless: `api/db.js` (67), `api/health.js` (73), `api/admin.js`
+Del lado serverless: `api/db/[tabla].js` (76), `api/health.js` (73), `api/admin.js`
 (61), `api/session.js` (54) y `api/_sesion.js` (47), que valida la cookie.
 
 ### El puente hacia `window`
@@ -273,8 +273,13 @@ consecuencias completas:
 
 - [**ADR-001**](adr/ADR-001-evolucion.md) — Evolución de DentaAgenda para
   mejorar su facilidad de uso.
-- [**ADR-002**](adr/ADR-002-auth.md) — Guardar la sesión de la doctora en una
-  cookie HttpOnly emitida por el servidor, en vez del token en el navegador.
+- [**ADR-002**](adr/ADR-002-experiencia.md) — Sacrificar simplicidad interna
+  para mejorar la experiencia del usuario.
+
+La sesión de la doctora es el ejemplo más claro de ese intercambio: guardar el
+token en una cookie HttpOnly emitida por el servidor obligó a agregar
+funciones serverless a un sitio que era puramente estático, y es lo que impide
+que un XSS se lleve la sesión con la que se leen los expedientes.
 
 El resto son decisiones menores, que no ameritan un documento propio:
 
@@ -423,7 +428,7 @@ Proyecto_ISW2/
 │   ├── arquitectura.md       este documento
 │   └── adr/                  decisiones registradas
 │       ├── ADR-001-evolucion.md
-│       └── ADR-002-auth.md
+│       └── ADR-002-experiencia.md
 ├── api/                      funciones serverless
 │   ├── session.js            emite y borra la cookie de sesión
 │   ├── admin.js              sirve el portal solo con sesión válida

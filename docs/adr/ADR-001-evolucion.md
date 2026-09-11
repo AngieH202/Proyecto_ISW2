@@ -2,7 +2,7 @@
 
 - **Estado:** aceptada
 - **Fecha:** 2026-09-10
-- **Relacionada:** [ADR-002 — autenticación](ADR-002-auth.md)
+- **Relacionada:** [ADR-002 — experiencia](ADR-002-experiencia.md)
 
 ## Contexto
 
