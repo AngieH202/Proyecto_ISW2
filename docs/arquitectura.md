@@ -186,7 +186,15 @@ define: `cargarCitas`, `cargarPendientes`, `cargarExpedientes` y
 ```mermaid
 erDiagram
     expedientes ||--o{ visitas_clinicas : "registra"
-    expedientes ||..o{ citas : "se vincula por nombre_paciente"
+    expedientes ||--o{ citas : "agenda"
+    horarios    ||--o{ citas : "ocupa"
+
+    horarios {
+        smallint id PK
+        text etiqueta UK "texto que usa la app, por ejemplo 9:15 AM"
+        smallint orden
+        boolean activo "un horario retirado se desactiva, no se borra"
+    }
 
     expedientes {
         bigint id PK
@@ -214,7 +222,8 @@ erDiagram
 
     citas {
         bigint id PK
-        text nombre_paciente "sin FK, se cruza por nombre"
+        uuid expediente_id FK "nulo solo en citas viejas con nombre ambiguo"
+        text nombre_paciente
         text telefono_paciente
         text fecha "formato YYYY-MM-DD"
         text hora "slot, por ejemplo 9:15 AM"
@@ -224,10 +233,20 @@ erDiagram
     }
 ```
 
-La relación entre `citas` y `expedientes` está punteada a propósito: **no hay
-llave foránea**. El código cruza las dos tablas comparando `nombre_paciente`
-contra `nombre` como texto exacto, así que dos pacientes homónimos comparten
-expediente y un nombre escrito distinto no encuentra ninguno.
+Desde [`013`](../migracion/013_horarios_y_relaciones.sql), `citas` tiene
+**llave foránea** a `expedientes` y su `hora` referencia el catálogo de
+`horarios`. Antes no existía ninguna de las dos: el cruce se hacía comparando
+`nombre_paciente` contra `nombre` como texto exacto —dos homónimos compartían
+expediente— y la columna `hora` aceptaba cualquier cadena.
+
+`expediente_id` puede quedar en nulo en las citas viejas cuyo nombre no
+identifica a una sola persona. Es deliberado: ante un homónimo se prefiere
+dejar el dato vacío antes que adivinar y mezclar dos historiales clínicos.
+
+El catálogo de `horarios` existe porque los horarios de atención vivían sólo
+en una constante del navegador. Ahora la clínica puede cambiarlos sin tocar
+código, y un horario que se deja de atender se **desactiva** en vez de
+borrarse: las citas que ya lo usaron tienen que seguir siendo válidas.
 
 ### Ciclo de vida de una cita
 
@@ -297,9 +316,10 @@ El resto son decisiones menores, que no ameritan un documento propio:
 
 Puntos abiertos, en orden de importancia:
 
-1. **`citas` y `expedientes` todavía no tienen llave foránea.** Las citas nuevas
-   ya guardan `identidad`, así que cruzan bien; las viejas siguen cruzándose por
-   nombre. Falta rellenar lo histórico y recién ahí poner la FK.
+1. **El código todavía no usa `citas.expediente_id`.** La llave foránea ya
+   existe y está rellenada, pero `marcarAtendida` sigue buscando el expediente
+   por nombre exacto. Cambiar esa consulta es lo que falta para aprovechar la
+   relación.
 2. **Fechas y horas se guardan como texto.** `hora` es un literal de slot
    (`'9:15 AM'`), lo que fuerza el parseo manual que hace `cargarSlotsDia()`
    para decidir si un horario ya pasó. Es el origen del caso raro de las 12:15

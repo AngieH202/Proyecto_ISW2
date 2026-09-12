@@ -10,6 +10,7 @@
     "cobertura": "node scripts/cobertura.mjs",
     "verificar:sitio": "node scripts/verificar-sitio.mjs",
     "verificar:rls": "node scripts/verificar-rls.mjs",
+    "verificar:esquema": "node scripts/verificar-esquema.mjs",
     "versionar": "node scripts/versionar.mjs",
     "imagenes": "node scripts/generar-imagenes.mjs"
   },

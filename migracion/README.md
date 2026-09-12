@@ -23,6 +23,7 @@ El diagrama entidad-relación está en [arquitectura.md](../docs/arquitectura.md
 | 010 | [`010_comprobaciones.sql`](010_comprobaciones.sql) | Solo `SELECT`: busca duplicados y contadores torcidos | No |
 | 011 | [`011_rls_endurecido.sql`](011_rls_endurecido.sql) | Cierra las tablas a `anon` y expone al paciente sólo cuatro funciones RPC | Sí |
 | 012 | [`012_cancelacion_por_el_paciente.sql`](012_cancelacion_por_el_paciente.sql) | Estado `cancelada_paciente` y función `cancelar_mi_cita` | Sí |
+| 013 | [`013_horarios_y_relaciones.sql`](013_horarios_y_relaciones.sql) | Catálogo `horarios`, y las llaves foráneas de `citas` hacia `expedientes` y `horarios` | Sí |
 
 Dependencias que fuerzan el orden:
 
