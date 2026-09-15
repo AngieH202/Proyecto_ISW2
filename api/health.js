@@ -25,14 +25,30 @@ export default async function handler(req, res) {
   const checks = {};
 
   checks.base_de_datos = await medir(async () => {
-    // select=id&limit=1 es la consulta mas barata que igual atraviesa
-    // PostgREST, las politicas y Postgres.
-    const r = await fetch(`${SB_URL}/rest/v1/citas?select=id&limit=1`, {
-      headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY },
+    // La sonda va por slots_ocupados y no por una lectura de citas.
+    //
+    // Antes leia citas con la anon key. Desde 011 anon no llega a las
+    // tablas, asi que PostgREST devolvia 401 y el healthcheck lo
+    // reportaba como base caida: justo al reves de lo que pasaba, porque
+    // ese 401 es la prueba de que las politicas funcionan.
+    //
+    // slots_ocupados es la RPC que usa el paciente para ver que horas
+    // estan tomadas. Atraviesa lo mismo --PostgREST, las politicas,
+    // Postgres-- y ademas devuelve datos, asi que comprueba el camino
+    // real y no solo que el servicio conteste.
+    const hoy = new Date().toISOString().slice(0, 10);
+    const r = await fetch(`${SB_URL}/rest/v1/rpc/slots_ocupados`, {
+      method: 'POST',
+      headers: {
+        apikey: SB_KEY,
+        Authorization: 'Bearer ' + SB_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ p_fecha: hoy }),
       cache: 'no-store'
     });
     if (!r.ok) throw new Error(`PostgREST respondió ${r.status}`);
-    await r.json();
+    if (!Array.isArray(await r.json())) throw new Error('slots_ocupados no devolvió una lista');
   });
 
   checks.autenticacion = await medir(async () => {
