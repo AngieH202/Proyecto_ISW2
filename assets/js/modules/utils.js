@@ -34,15 +34,19 @@ export function escapar(valor) {
   return String(valor ?? '').replace(/[&<>"']/g, (c) => ESCAPES[c]);
 }
 
+// El fallback devuelve el estado crudo, que viene de la base. Como el
+// resultado se mete en un innerHTML, sale escapado: es la unica salida
+// de este modulo que puede arrastrar texto que no escribimos nosotros.
 export function labelEstado(e) {
-  return {
+  const conocido = {
     pendiente: 'Pendiente',
     confirmada: 'Confirmada',
     atendida: 'Atendida',
     cancelada: 'Cancelada',
     cancelada_paciente: 'Cancelada por el paciente',
     nopresento: 'No se presentó'
-  }[e] || e;
+  }[e];
+  return conocido ?? escapar(e);
 }
 
 export function iniciales(nombre) {

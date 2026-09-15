@@ -1,6 +1,6 @@
 import { sbRpc } from './api.js';
 import { SLOTS_BASE, DIAS_NOMBRES, MESES } from './config.js';
-import { notif, showError } from './utils.js';
+import { notif, showError, escapar } from './utils.js';
 
 export let pacienteData = {};
 export let slotSel = null;
@@ -240,10 +240,10 @@ export async function enviarSolicitud() {
     const detail = document.getElementById('confirm-detail');
     if (detail) {
       detail.innerHTML = `
-        <div><span>Paciente</span><span style="font-weight:600">${pacienteData.nombre}</span></div>
+        <div><span>Paciente</span><span style="font-weight:600">${escapar(pacienteData.nombre)}</span></div>
         <div><span>Fecha</span><span style="font-weight:600">${diaSel.nombreDia}, ${diaSel.label}</span></div>
         <div><span>Hora</span><span style="font-weight:600">${hora}</span></div>
-        <div><span>Motivo</span><span style="font-weight:600">${motivo}</span></div>
+        <div><span>Motivo</span><span style="font-weight:600">${escapar(motivo)}</span></div>
         <div><span>Estado</span><span style="color:#856404;font-weight:700;background:#fff3cd;padding:2px 8px;border-radius:8px">Pendiente de confirmación</span></div>`;
     }
     setPaso(4);

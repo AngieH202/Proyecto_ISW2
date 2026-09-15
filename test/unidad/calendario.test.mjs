@@ -132,6 +132,15 @@ describe('labelEstado()', () => {
   test('un estado desconocido se muestra tal cual, sin romper la pantalla', () => {
     assert.equal(labelEstado('reprogramada'), 'reprogramada');
   });
+
+  // El fallback devuelve un valor que viene de la base y termina en un
+  // innerHTML. Si vuelve a salir crudo, quien escriba el estado elige
+  // que corre en la pantalla de la doctora.
+  test('un estado con marcado dentro sale escapado, no como HTML', () => {
+    const salida = labelEstado('<img src=x onerror="alert(1)">');
+    assert.ok(!salida.includes('<'), 'no puede quedar una etiqueta abierta');
+    assert.equal(salida, '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;');
+  });
 });
 
 describe('iniciales()', () => {
