@@ -1,0 +1,335 @@
+{
+  "generado_at": "2026-09-15T22:20:30Z",
+  "motor": "postgres",
+  "tablas": [
+    {
+      "nombre": "citas",
+      "filas": 9,
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "bigint",
+          "pk": true,
+          "nulo": false
+        },
+        {
+          "nombre": "nombre_paciente",
+          "tipo": "text",
+          "pk": false,
+          "nulo": false
+        },
+        {
+          "nombre": "identidad",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "telefono_paciente",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "hora",
+          "tipo": "text",
+          "pk": false,
+          "nulo": false
+        },
+        {
+          "nombre": "motivo",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "estado",
+          "tipo": "text",
+          "pk": false,
+          "nulo": false
+        },
+        {
+          "nombre": "fecha",
+          "tipo": "date",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "created_at",
+          "tipo": "timestamp with time zone",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "expediente_id",
+          "tipo": "uuid",
+          "pk": false,
+          "nulo": true
+        }
+      ],
+      "indices": [
+        "citas_expediente_idx",
+        "citas_fecha_estado_idx",
+        "citas_fecha_idx",
+        "citas_nombre_paciente_idx",
+        "citas_pendientes_idx",
+        "citas_pkey",
+        "citas_slot_unico_idx"
+      ],
+      "relaciones": [
+        {
+          "columna": "expediente_id",
+          "referencia": "expedientes.id"
+        },
+        {
+          "columna": "hora",
+          "referencia": "horarios.etiqueta"
+        }
+      ],
+      "politicas_rls": [
+        "citas_doctora"
+      ]
+    },
+    {
+      "nombre": "expedientes",
+      "filas": 4,
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "uuid",
+          "pk": true,
+          "nulo": false
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "text",
+          "pk": false,
+          "nulo": false
+        },
+        {
+          "nombre": "identidad",
+          "tipo": "text",
+          "pk": false,
+          "nulo": false
+        },
+        {
+          "nombre": "edad",
+          "tipo": "integer",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "telefono",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "visitas",
+          "tipo": "integer",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "ultima_visita",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "notas",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "created_at",
+          "tipo": "timestamp with time zone",
+          "pk": false,
+          "nulo": true
+        }
+      ],
+      "indices": [
+        "expedientes_identidad_key",
+        "expedientes_nombre_idx",
+        "expedientes_pkey"
+      ],
+      "relaciones": [],
+      "politicas_rls": [
+        "expedientes_doctora"
+      ]
+    },
+    {
+      "nombre": "horarios",
+      "filas": 9,
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "smallint",
+          "pk": true,
+          "nulo": false
+        },
+        {
+          "nombre": "etiqueta",
+          "tipo": "text",
+          "pk": false,
+          "nulo": false
+        },
+        {
+          "nombre": "orden",
+          "tipo": "smallint",
+          "pk": false,
+          "nulo": false
+        },
+        {
+          "nombre": "activo",
+          "tipo": "boolean",
+          "pk": false,
+          "nulo": false
+        },
+        {
+          "nombre": "created_at",
+          "tipo": "timestamp with time zone",
+          "pk": false,
+          "nulo": true
+        }
+      ],
+      "indices": [
+        "horarios_etiqueta_key",
+        "horarios_pkey"
+      ],
+      "relaciones": [],
+      "politicas_rls": [
+        "horarios_doctora",
+        "horarios_lectura"
+      ]
+    },
+    {
+      "nombre": "perfiles",
+      "filas": 1,
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "uuid",
+          "pk": true,
+          "nulo": false
+        },
+        {
+          "nombre": "nombre",
+          "tipo": "text",
+          "pk": false,
+          "nulo": false
+        },
+        {
+          "nombre": "rol",
+          "tipo": "text",
+          "pk": false,
+          "nulo": false
+        },
+        {
+          "nombre": "telefono",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "created_at",
+          "tipo": "timestamp with time zone",
+          "pk": false,
+          "nulo": true
+        }
+      ],
+      "indices": [
+        "perfiles_pkey"
+      ],
+      "relaciones": [
+        {
+          "columna": "id",
+          "referencia": "users.id"
+        }
+      ],
+      "politicas_rls": [
+        "perfiles_doctora"
+      ]
+    },
+    {
+      "nombre": "visitas_clinicas",
+      "filas": 1,
+      "columnas": [
+        {
+          "nombre": "id",
+          "tipo": "uuid",
+          "pk": true,
+          "nulo": false
+        },
+        {
+          "nombre": "expediente_id",
+          "tipo": "uuid",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "fecha",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "hora",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "diagnostico",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "tratamientos",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "medicamentos",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "plan",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "notas",
+          "tipo": "text",
+          "pk": false,
+          "nulo": true
+        },
+        {
+          "nombre": "created_at",
+          "tipo": "timestamp with time zone",
+          "pk": false,
+          "nulo": true
+        }
+      ],
+      "indices": [
+        "visitas_clinicas_expediente_idx",
+        "visitas_clinicas_pkey"
+      ],
+      "relaciones": [
+        {
+          "columna": "expediente_id",
+          "referencia": "expedientes.id"
+        }
+      ],
+      "politicas_rls": [
+        "visitas_doctora"
+      ]
+    }
+  ]
+}
