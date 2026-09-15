@@ -1,6 +1,6 @@
 import { sbRpc, authLogin } from './api.js';
 import { hideError, showError, showScreen, labelEstado, escapar, notif } from './utils.js';
-import { renderDias, setPaso, setPacienteData, resetSeleccion, pacienteData, diaSel, slotSel } from './patient.js';
+import { renderDias, setPaso, setPacienteData, resetSeleccion, estado } from './patient.js';
 import { DOCTORA_USUARIO, DOCTORA_EMAIL, SLOTS_BASE } from './config.js';
 import { abrirSesion } from './sesion.js';
 
@@ -227,7 +227,7 @@ export function cancelarAgendamiento() {
 // confirmación. Acá sí existe en la base, así que hay que darla de baja
 // para que el horario vuelva a quedar libre.
 export async function cancelarCitaAgendada() {
-  if (!diaSel || slotSel === null) {
+  if (!estado.diaSel || estado.slotSel === null) {
     logout();
     return;
   }
@@ -239,9 +239,9 @@ export async function cancelarCitaAgendada() {
   }
 
   const r = await sbRpc('cancelar_mi_cita', {
-    p_identidad: pacienteData.id,
-    p_fecha: diaSel.key,
-    p_hora: SLOTS_BASE[slotSel]
+    p_identidad: estado.pacienteData.id,
+    p_fecha: estado.diaSel.key,
+    p_hora: SLOTS_BASE[estado.slotSel]
   });
 
   const restaurar = () => {

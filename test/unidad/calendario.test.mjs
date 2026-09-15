@@ -91,13 +91,13 @@ describe('cambiarSemana()', () => {
     const actual = obtenerDiasSemana()[0].getTime();
     cambiarSemana(-1);                      // este no debería hacer nada
     assert.equal(obtenerDiasSemana()[0].getTime(), actual);
-    assert.equal(patient.semanaOffset, 0);
+    assert.equal(patient.estado.semanaOffset, 0);
   });
 
   test('cambiar de semana borra el día que estaba elegido', () => {
     selDia('2030-05-07', '7 may 2030', 'Mar');
     cambiarSemana(1);
-    assert.equal(patient.diaSel, null, 'el día de otra semana no puede seguir elegido');
+    assert.equal(patient.estado.diaSel, null, 'el día de otra semana no puede seguir elegido');
     cambiarSemana(-1);
   });
 
@@ -111,14 +111,14 @@ describe('selDia() / resetSeleccion()', () => {
   test('elegir un día limpia el horario elegido antes', () => {
     patient.selSlot(3);
     selDia('2030-05-07', '7 may 2030', 'Mar');
-    assert.equal(patient.slotSel, null, 'el horario de otro día no sirve');
-    assert.deepEqual(patient.diaSel, { key: '2030-05-07', label: '7 may 2030', nombreDia: 'Mar' });
+    assert.equal(patient.estado.slotSel, null, 'el horario de otro día no sirve');
+    assert.deepEqual(patient.estado.diaSel, { key: '2030-05-07', label: '7 may 2030', nombreDia: 'Mar' });
   });
 
   test('resetSeleccion() deja todo sin elegir', () => {
     resetSeleccion();
-    assert.equal(patient.diaSel, null);
-    assert.equal(patient.slotSel, null);
+    assert.equal(patient.estado.diaSel, null);
+    assert.equal(patient.estado.slotSel, null);
   });
 });
 

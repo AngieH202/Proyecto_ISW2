@@ -67,8 +67,8 @@ describe('los pasos del paciente', () => {
     patient.irPaso1();
 
     assert.equal(enPaso(1), true);
-    assert.equal(patient.diaSel, null);
-    assert.equal(patient.slotSel, null);
+    assert.equal(patient.estado.diaSel, null);
+    assert.equal(patient.estado.slotSel, null);
   });
 });
 
@@ -159,7 +159,7 @@ describe('cambiar de día mientras carga', () => {
     patient.resetSeleccion();               // suelta el día antes de que responda
 
     await enVuelo;                          // no debe lanzar
-    assert.equal(patient.diaSel, null);
+    assert.equal(patient.estado.diaSel, null);
   });
 });
 

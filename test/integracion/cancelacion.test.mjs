@@ -152,8 +152,8 @@ describe('cancelar desde el propio flujo de agendamiento', () => {
     globalThis.cancelarAgendamiento();
 
     assert.equal(db.citas.length, citasAntes, 'la cita todavía no existía');
-    assert.equal(patient.diaSel, null, 'suelta lo que había elegido');
-    assert.equal(patient.slotSel, null);
+    assert.equal(patient.estado.diaSel, null, 'suelta lo que había elegido');
+    assert.equal(patient.estado.slotSel, null);
     assert.equal(enLogin(), true, 'vuelve al formulario');
   });
 
@@ -175,7 +175,7 @@ describe('cancelar desde el propio flujo de agendamiento', () => {
   test('y lo devuelve al login con el formulario limpio', () => {
     assert.equal(enLogin(), true);
     assert.equal(el('p-nombre').value, '', 'el formulario queda en blanco');
-    assert.equal(patient.diaSel, null);
+    assert.equal(patient.estado.diaSel, null);
   });
 
   test('ese horario queda libre para otro paciente', async () => {

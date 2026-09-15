@@ -39,7 +39,7 @@ describe('loginPaciente()', () => {
     assert.equal(el('cf-nombre').value, MARIA.nombre);
     assert.equal(el('cf-id').value, MARIA.id);
     assert.equal(el('cf-motivo').value, '', 'el motivo empieza en blanco');
-    assert.equal(patient.diaSel, null, 'sin día elegido de una sesión anterior');
+    assert.equal(patient.estado.diaSel, null, 'sin día elegido de una sesión anterior');
   });
 
   test('volver a registrarse no crea un segundo expediente', async () => {

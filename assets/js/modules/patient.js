@@ -2,19 +2,25 @@ import { sbRpc } from './api.js';
 import { SLOTS_BASE, DIAS_NOMBRES, MESES } from './config.js';
 import { notif, showError, escapar } from './utils.js';
 
-export let pacienteData = {};
-export let slotSel = null;
-export let diaSel = null;
-export let semanaOffset = 0;
+// Estado de la reserva en curso. Va en un objeto y no en cuatro `let`
+// exportados: exportar un `let` le entrega a quien importa un binding
+// que cambia bajo sus pies, y deja el punto de escritura repartido.
+// Con un objeto la referencia es fija y el dato sigue siendo uno solo.
+export const estado = {
+  pacienteData: {},
+  slotSel: null,
+  diaSel: null,
+  semanaOffset: 0
+};
 
 // Único punto de escritura del estado del paciente desde otros módulos.
 export function setPacienteData(datos) {
-  pacienteData = datos || {};
+  estado.pacienteData = datos || {};
 }
 
 export function resetSeleccion() {
-  diaSel = null;
-  slotSel = null;
+  estado.diaSel = null;
+  estado.slotSel = null;
 }
 
 export function setPaso(n) {
@@ -31,7 +37,7 @@ export function obtenerDiasSemana() {
   const diaSemana = hoy.getDay();
   const diffLunes = diaSemana === 0 ? -6 : 1 - diaSemana;
   const lunes = new Date(hoy);
-  lunes.setDate(hoy.getDate() + diffLunes + (semanaOffset * 7));
+  lunes.setDate(hoy.getDate() + diffLunes + (estado.semanaOffset * 7));
   lunes.setHours(0, 0, 0, 0);
 
   const dias = [];
@@ -69,7 +75,7 @@ export function renderDias() {
     const pasado = esPasado(d);
     const esHoy = d.getTime() === hoy.getTime();
     const key = formatoFechaKey(d);
-    const seleccionado = diaSel && diaSel.key === key;
+    const seleccionado = estado.diaSel && estado.diaSel.key === key;
 
     let clase = 'dia-btn';
     if (pasado) clase += ' pasado';
@@ -88,22 +94,22 @@ export function renderDias() {
 }
 
 export function selDia(key, label, nombreDia) {
-  diaSel = { key, label, nombreDia };
-  slotSel = null;
+  estado.diaSel = { key, label, nombreDia };
+  estado.slotSel = null;
   const err = document.getElementById('dia-err');
   if (err) err.style.display = 'none';
   renderDias();
 }
 
 export function cambiarSemana(dir) {
-  if (semanaOffset + dir < 0) return;
-  semanaOffset += dir;
-  diaSel = null;
-  slotSel = null;
+  if (estado.semanaOffset + dir < 0) return;
+  estado.semanaOffset += dir;
+  estado.diaSel = null;
+  estado.slotSel = null;
 
   const btnAnt = document.getElementById('btn-sem-ant');
   const label = document.getElementById('label-semana');
-  if (semanaOffset <= 0) {
+  if (estado.semanaOffset <= 0) {
     btnAnt.disabled = true;
     btnAnt.style.background = '#e0f0f8';
     btnAnt.style.color = '#adb5bd';
@@ -116,20 +122,20 @@ export function cambiarSemana(dir) {
   }
 
   if (label) {
-    label.textContent = semanaOffset === 0 ? '📅 Esta semana' : semanaOffset === 1 ? 'Próxima semana' : 'Semana +' + semanaOffset;
+    label.textContent = estado.semanaOffset === 0 ? '📅 Esta semana' : estado.semanaOffset === 1 ? 'Próxima semana' : 'Semana +' + estado.semanaOffset;
   }
 
   renderDias();
 }
 
 export async function cargarSlotsDia() {
-  if (!diaSel) return;
+  if (!estado.diaSel) return;
 
   // El dia con el que arranca esta carga. Entre la peticion y la
   // respuesta el paciente puede cambiar de dia o cancelar: si para
-  // entonces diaSel ya no es este, esta respuesta quedo vieja y pintarla
+  // entonces estado.diaSel ya no es este, esta respuesta quedo vieja y pintarla
   // mostraria los horarios de otro dia.
-  const dia = diaSel;
+  const dia = estado.diaSel;
 
   const target = document.getElementById('horarios-grid');
   if (target) target.innerHTML = '<div class="loading">Cargando horarios...</div>';
@@ -140,7 +146,7 @@ export async function cargarSlotsDia() {
   // Sin cache: mostrar como libre un horario que otro acaba de tomar es
   // el peor error posible en esta pantalla.
   const ocupadas = await sbRpc('slots_ocupados', { p_fecha: dia.key });
-  if (diaSel !== dia) return;
+  if (estado.diaSel !== dia) return;
 
   const horasOcupadas = new Set(
     (Array.isArray(ocupadas.data) ? ocupadas.data : []).map((c) => c.hora)
@@ -164,7 +170,7 @@ export async function cargarSlotsDia() {
     }
 
     const libre = !ocupado && !yaP;
-    const sel = slotSel === i;
+    const sel = estado.slotSel === i;
 
     let clase = 'slot';
     if (yaP) clase += ' pasado';
@@ -179,7 +185,7 @@ export async function cargarSlotsDia() {
 }
 
 export function selSlot(i) {
-  slotSel = i;
+  estado.slotSel = i;
   const err = document.getElementById('slot-err');
   if (err) err.style.display = 'none';
   cargarSlotsDia();
@@ -192,7 +198,7 @@ export function irPaso1() {
 }
 
 export function irPaso2() {
-  if (!diaSel) {
+  if (!estado.diaSel) {
     const err = document.getElementById('dia-err');
     if (err) err.style.display = 'block';
     return;
@@ -200,13 +206,13 @@ export function irPaso2() {
   const err = document.getElementById('dia-err');
   if (err) err.style.display = 'none';
   const label = document.getElementById('dia-seleccionado-label');
-  if (label) label.textContent = '📅 ' + diaSel.nombreDia + ', ' + diaSel.label;
+  if (label) label.textContent = '📅 ' + estado.diaSel.nombreDia + ', ' + estado.diaSel.label;
   cargarSlotsDia();
   setPaso(2);
 }
 
 export function irPaso3() {
-  if (slotSel === null) {
+  if (estado.slotSel === null) {
     const err = document.getElementById('slot-err');
     if (err) err.style.display = 'block';
     return;
@@ -215,7 +221,7 @@ export function irPaso3() {
   if (label) {
     label.innerHTML = `
       <small>Cita seleccionada</small>
-      <strong>${diaSel.nombreDia}, ${diaSel.label} · ${SLOTS_BASE[slotSel]} · Clínica Dra. Belkis Suisse</strong>`;
+      <strong>${estado.diaSel.nombreDia}, ${estado.diaSel.label} · ${SLOTS_BASE[estado.slotSel]} · Clínica Dra. Belkis Suisse</strong>`;
   }
   setPaso(3);
 }
@@ -234,14 +240,14 @@ export async function enviarSolicitud() {
   btn.disabled = true;
   btn.textContent = 'Enviando...';
 
-  const hora = SLOTS_BASE[slotSel];
+  const hora = SLOTS_BASE[estado.slotSel];
 
   const mostrarConfirmacion = () => {
     const detail = document.getElementById('confirm-detail');
     if (detail) {
       detail.innerHTML = `
-        <div><span>Paciente</span><span style="font-weight:600">${escapar(pacienteData.nombre)}</span></div>
-        <div><span>Fecha</span><span style="font-weight:600">${diaSel.nombreDia}, ${diaSel.label}</span></div>
+        <div><span>Paciente</span><span style="font-weight:600">${escapar(estado.pacienteData.nombre)}</span></div>
+        <div><span>Fecha</span><span style="font-weight:600">${estado.diaSel.nombreDia}, ${estado.diaSel.label}</span></div>
         <div><span>Hora</span><span style="font-weight:600">${hora}</span></div>
         <div><span>Motivo</span><span style="font-weight:600">${escapar(motivo)}</span></div>
         <div><span>Estado</span><span style="color:#856404;font-weight:700;background:#fff3cd;padding:2px 8px;border-radius:8px">Pendiente de confirmación</span></div>`;
@@ -258,10 +264,10 @@ export async function enviarSolicitud() {
   // se guardara identidad: comparar por nombre a secas le mostraria a un
   // homonimo la confirmacion de una cita ajena.
   const r = await sbRpc('crear_solicitud', {
-    p_identidad: pacienteData.id,
-    p_nombre: pacienteData.nombre,
-    p_telefono: pacienteData.tel,
-    p_fecha: diaSel.key,
+    p_identidad: estado.pacienteData.id,
+    p_nombre: estado.pacienteData.nombre,
+    p_telefono: estado.pacienteData.tel,
+    p_fecha: estado.diaSel.key,
     p_hora: hora,
     p_motivo: motivo
   });
@@ -283,7 +289,7 @@ export async function enviarSolicitud() {
 }
 
 export function nuevaCita() {
-  semanaOffset = 0;
+  estado.semanaOffset = 0;
   resetSeleccion();
   const motivo = document.getElementById('cf-motivo');
   if (motivo) motivo.value = '';
