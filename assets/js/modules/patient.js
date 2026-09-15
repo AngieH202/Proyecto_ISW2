@@ -160,8 +160,8 @@ export async function cargarSlotsDia() {
     let yaP = false;
 
     if (esHoy) {
-      let hNum = parseInt(h.split(':')[0]);
-      const mNum = parseInt(h.split(':')[1]) || 0;
+      let hNum = Number.parseInt(h.split(':')[0], 10);
+      const mNum = Number.parseInt(h.split(':')[1], 10) || 0;
       if (h.includes('PM') && hNum !== 12) hNum += 12;
       if (h.includes('AM') && hNum === 12) hNum = 0;
       const slotMin = hNum * 60 + mNum;

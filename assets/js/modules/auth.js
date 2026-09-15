@@ -76,7 +76,7 @@ export async function loginPaciente() {
   const alta = await sbRpc('registrar_paciente', {
     p_nombre: nombre,
     p_identidad: id,
-    p_edad: parseInt(edad),
+    p_edad: Number.parseInt(edad, 10),
     p_telefono: tel
   });
 
