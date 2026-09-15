@@ -34,21 +34,32 @@ Dependencias que fuerzan el orden:
 - **012 después de 006 y 011** — rehace el índice único de 006 para que las
   citas que cancela el paciente también liberen su horario, y reemplaza dos de
   las funciones que crea 011.
+- **013 después de 002 y 003** — rellena `citas.expediente_id` cruzando contra
+  `expedientes`, y no puede aplicar la llave foránea hasta que ese relleno
+  terminó.
 
 ## Si tu base ya existe
 
 Sobre un proyecto que ya está andando, los scripts se comportan distinto: del
 001 al 004 son `create table if not exists` y **no hacen nada**. Lo que falta
-agregar es el bloque 005–008:
+agregar es todo lo que viene después:
 
 ```
 005_indices.sql  →  006_evitar_doble_reserva.sql  →  007_sincronizar_visitas.sql  →  008_vistas_de_consulta.sql
+        →  011_rls_endurecido.sql  →  012_cancelacion_por_el_paciente.sql  →  013_horarios_y_relaciones.sql
 ```
 
 Antes de correr **006**, revisá si ya tenés horarios duplicados — el índice
 único falla mientras exista un choque. La consulta que los lista está comentada
 dentro de ese mismo archivo, junto con la forma menos destructiva de
 resolverlos.
+
+**011 a 013 no son opcionales**, aunque la base ya funcione sin ellos: 011 es lo
+que cierra las tablas (ver [Sobre el acceso a los datos](#sobre-el-acceso-a-los-datos)),
+012 es de donde salen las funciones que usa el flujo del paciente, y 013 agrega
+la quinta tabla y dos de las cuatro llaves foráneas. Una forma rápida de ver
+cuáles te faltan es exportar el esquema real y compararlo — está más abajo, en
+[Comprobar qué hay aplicado de verdad](#comprobar-qué-hay-aplicado-de-verdad).
 
 **No corras 009** sobre esa base: metería pacientes inventados junto a los
 reales.
@@ -122,35 +133,84 @@ descuido. `citas.fecha` la escribe `formatoFechaKey()` siempre en ISO
 español ya formateada para mostrar (`03 de septiembre de 2026`).
 
 **`hora` es `text` en las dos tablas.** Guarda la etiqueta del slot (`9:15 AM`),
-no una hora real. Los valores válidos están en `SLOTS_BASE`.
+no una hora real. Desde 013 los valores válidos ya no viven en la constante
+`SLOTS_BASE` del navegador sino en la tabla `horarios`, y `citas.hora` los
+referencia con una llave foránea contra `horarios.etiqueta` — por eso es la
+única FK del esquema que apunta a un texto y no a un id, y por eso lleva
+`on update cascade`. `visitas_clinicas.hora` sigue siendo texto libre: es parte
+del registro histórico de la visita, no un horario reservable.
 
-**`citas.identidad` existe pero está vacía.** El cliente todavía no la escribe.
-Es el camino para dejar de cruzar citas y expedientes por nombre; el cambio es
-de una línea y está explicado al final de
-[`003_citas.sql`](003_citas.sql).
+**`citas.identidad` es nula sólo en las citas viejas.** Desde 012 la escribe
+`crear_solicitud`, que es por donde pasa todo el flujo del paciente. Las filas
+creadas antes de ese cambio quedaron con `identidad` nula, y por eso
+`crear_solicitud` y `cancelar_mi_cita` todavía cruzan por nombre como respaldo.
+013 usó esta misma columna para rellenar `citas.expediente_id`, y dejó en nulo
+las que no pudo resolver sin adivinar (homónimos).
 
 ## Sobre el acceso a los datos
 
-Estos scripts **no manejan Row Level Security**. La base en producción tiene RLS
-activada en las cuatro tablas, con políticas `for all using (true)`, o sea
-acceso completo para cualquiera.
+Hasta 010 los scripts no manejaban Row Level Security, y la base quedaba con
+políticas `for all using (true)`: cualquiera con la anon key —que es pública,
+está en `config.js`— podía leer y modificar los expedientes clínicos.
 
-Eso es lo que la aplicación necesita hoy, porque
-[`api.js`](../assets/js/modules/api.js) firma todas las peticiones con la anon
-key y nunca usa el token de sesión de la doctora. Como la anon key y la URL del
-proyecto están en `config.js`, que es público, cualquiera puede leer y modificar
-los expedientes clínicos.
+**011 cierra eso.** Las tablas no se exponen a `anon`; el paciente entra sólo
+por cuatro funciones RPC `security definer`, que son las únicas que atraviesan
+la frontera:
 
-Para la demo del proyecto no importa; antes de cargar datos reales de pacientes
-hay que resolver las dos mitades: que el cliente mande el token de sesión, y
-recién entonces restringir las políticas.
+| Función | Para qué |
+| --- | --- |
+| `registrar_paciente` | Alta idempotente del expediente, por identidad |
+| `crear_solicitud` | Pedir una cita sin poder pisar la de otro |
+| `slots_ocupados` | Qué horas de un día están tomadas, sin decir de quién |
+| `estado_de_mis_citas` | El historial de una identidad, y sólo de esa |
+
+012 agrega la quinta, `cancelar_mi_cita`. El panel de la doctora no pasa por
+ahí: va por [`api/db/[tabla].js`](../api/db/[tabla].js), que firma con el token
+de sesión guardado en una cookie `HttpOnly`.
+
+`horarios` es la excepción deliberada: 013 le da lectura pública (`horarios_lectura`),
+porque el paciente necesita ver los horarios para poder elegir uno. Escribirlos
+queda para la doctora (`horarios_doctora`).
+
+Para comprobar desde afuera que quedó bien aplicado:
+
+```bash
+npm run verificar:rls
+```
+
+Consulta el proyecto real con la anon key: las tablas tienen que responder 401 y
+las RPC 200. Antes de correr 011 falla, y está bien que falle.
+
+## Comprobar qué hay aplicado de verdad
+
+El repo no es prueba de nada: un script commiteado puede no haberse corrido
+nunca. Para leer el esquema que existe de verdad, con los conteos reales:
+
+1. Pegar [`../scripts/exportar-esquema.sql`](../scripts/exportar-esquema.sql) en
+   el SQL Editor de Supabase y correrlo.
+2. Guardar el contenido de la única celda del resultado en
+   [`../docs/db-export.json`](../docs/db-export.json).
+3. `npm run verificar:esquema`
+
+No inventa nada: lee los catálogos del sistema y cuenta las filas con
+`query_to_xml`, tabla por tabla. El estado que dejó 013 son cinco tablas, todas
+con llave primaria, y cuatro llaves foráneas:
+
+```
+citas.expediente_id            -> expedientes.id
+citas.hora                     -> horarios.etiqueta
+visitas_clinicas.expediente_id -> expedientes.id
+perfiles.id                    -> auth.users.id
+```
+
+Si tu export muestra menos, te falta correr algo.
 
 ## Lo que estos scripts no incluyen
 
 - **Script de reseteo.** Un `drop table` borraría expedientes clínicos sin
   vuelta atrás; si necesitás empezar de cero, es más seguro crear un proyecto
   nuevo de Supabase.
-- **Llave foránea entre `citas` y `expedientes`.** Requiere primero que el
-  cliente escriba `citas.identidad` y después rellenar lo viejo. Mientras tanto,
-  `vista_agenda` (script 008) deja ver qué citas no cruzan con ningún
-  expediente: son las que traen `expediente_id` en `NULL`.
+- **Expediente para toda cita.** 013 agregó la llave foránea, pero las citas
+  viejas cuyo nombre no identifica a una sola persona quedaron con
+  `expediente_id` en `NULL` antes que mezclar dos historiales clínicos.
+  `vista_agenda` (script 008) deja ver cuáles son.
