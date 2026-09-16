@@ -16,8 +16,13 @@ export const DEMO_EMAIL = 'demo@dentaagenda.com';
 
 // Cuenta nominal para quien evalua el entregable. Mismo alcance que la
 // demo: entra al portal completo.
+//
+// El correo no sigue el patron de las otras dos a proposito: es el
+// institucional con el que esta dada de alta la cuenta en Supabase, y
+// tiene que coincidir letra por letra o el token se pide con un correo
+// que no existe.
 export const EVALUADOR_USUARIO = 'jaleman';
-export const EVALUADOR_EMAIL = 'jaleman@dentaagenda.com';
+export const EVALUADOR_EMAIL = 'jalemanw@unitec.edu';
 
 // Usuario que se escribe en el formulario -> correo con el que se
 // autentica contra Supabase. Lo que no esta aca no entra.
