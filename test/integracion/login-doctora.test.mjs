@@ -51,7 +51,11 @@ globalThis.fetch = async (url, opts = {}) => {
 
 await import(MODULOS + 'app.js');
 const { cerrarSesion, haySesion } = await import(MODULOS + 'modules/sesion.js');
-const { DOCTORA_USUARIO, DOCTORA_EMAIL, DEMO_USUARIO, DEMO_EMAIL } = await import(MODULOS + 'modules/config.js');
+const {
+  DOCTORA_USUARIO, DOCTORA_EMAIL,
+  DEMO_USUARIO, DEMO_EMAIL,
+  EVALUADOR_EMAIL
+} = await import(MODULOS + 'modules/config.js');
 
 async function ingresar(usuario, pass) {
   escribir('d-usuario', usuario);
@@ -147,6 +151,14 @@ describe('la cuenta de demostración', () => {
 
       assert.equal(globalThis.location.href, '/admin', `${escrito} debería entrar`);
     }
+  });
+
+  test('la cuenta del evaluador entra con su propio correo', async () => {
+    await ingresar('JAleman', CLAVE_BUENA);
+
+    const login = aRuta('/auth/v1/token')[0];
+    assert.equal(login.cuerpo.email, EVALUADOR_EMAIL, 'tal como se escribe, con mayusculas');
+    assert.equal(globalThis.location.href, '/admin');
   });
 
   test('sigue sin entrar cualquier otro usuario', async () => {

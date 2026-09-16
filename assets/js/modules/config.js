@@ -14,11 +14,20 @@ export const DOCTORA_EMAIL = 'belki.den@dentaagenda.com';
 export const DEMO_USUARIO = 'demo';
 export const DEMO_EMAIL = 'demo@dentaagenda.com';
 
+// Cuenta nominal para quien evalua el entregable. Mismo alcance que la
+// demo: entra al portal completo.
+export const EVALUADOR_USUARIO = 'jaleman';
+export const EVALUADOR_EMAIL = 'jaleman@dentaagenda.com';
+
 // Usuario que se escribe en el formulario -> correo con el que se
 // autentica contra Supabase. Lo que no esta aca no entra.
+//
+// Las claves van en minusculas: loginDoctora() normaliza lo que se
+// escribe antes de buscarlo, asi que "JAleman" encuentra "jaleman".
 export const CUENTAS = {
   [DOCTORA_USUARIO]: DOCTORA_EMAIL,
-  [DEMO_USUARIO]: DEMO_EMAIL
+  [DEMO_USUARIO]: DEMO_EMAIL,
+  [EVALUADOR_USUARIO]: EVALUADOR_EMAIL
 };
 
 export const SLOTS_BASE = ['7:00 AM', '7:45 AM', '8:30 AM', '9:15 AM', '10:00 AM', '10:45 AM', '11:30 AM', '12:15 PM', '2:00 PM'];
