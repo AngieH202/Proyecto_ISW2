@@ -1,7 +1,7 @@
 import { sbRpc, authLogin } from './api.js';
 import { hideError, showError, showScreen, labelEstado, escapar, notif } from './utils.js';
 import { renderDias, setPaso, setPacienteData, resetSeleccion, estado } from './patient.js';
-import { DOCTORA_USUARIO, DOCTORA_EMAIL, SLOTS_BASE } from './config.js';
+import { CUENTAS, SLOTS_BASE } from './config.js';
 import { abrirSesion } from './sesion.js';
 
 export function setRole(r) {
@@ -19,7 +19,10 @@ export async function loginDoctora() {
     showError('Completá todos los campos.');
     return;
   }
-  if (usuario !== DOCTORA_USUARIO) {
+  // hasOwn y no CUENTAS[usuario] a secas: escribir "constructor" en el
+  // campo devolveria una funcion heredada, que es truthy.
+  const correo = Object.hasOwn(CUENTAS, usuario) ? CUENTAS[usuario] : null;
+  if (!correo) {
     showError('Usuario o contraseña incorrectos.');
     return;
   }
@@ -27,7 +30,7 @@ export async function loginDoctora() {
   btn.disabled = true;
   btn.textContent = 'Ingresando...';
   hideError();
-  const res = await authLogin(DOCTORA_EMAIL, pass);
+  const res = await authLogin(correo, pass);
 
   if (!res.access_token) {
     showError('Usuario o contraseña incorrectos.');

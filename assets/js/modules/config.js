@@ -4,6 +4,23 @@ export const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 export const DOCTORA_USUARIO = 'belki.den';
 export const DOCTORA_EMAIL = 'belki.den@dentaagenda.com';
 
+// Cuenta de demostracion para la evaluacion del entregable.
+//
+// Entra al mismo portal que la doctora: validar() en api/_sesion.js
+// comprueba que el token sea de un usuario de Supabase, no de cual. No
+// hay roles, asi que esta cuenta solo tiene sentido mientras la base
+// lleve datos de prueba. Con pacientes reales adentro, borrala de
+// Supabase y este mapa deja de abrirle la puerta.
+export const DEMO_USUARIO = 'demo';
+export const DEMO_EMAIL = 'demo@dentaagenda.com';
+
+// Usuario que se escribe en el formulario -> correo con el que se
+// autentica contra Supabase. Lo que no esta aca no entra.
+export const CUENTAS = {
+  [DOCTORA_USUARIO]: DOCTORA_EMAIL,
+  [DEMO_USUARIO]: DEMO_EMAIL
+};
+
 export const SLOTS_BASE = ['7:00 AM', '7:45 AM', '8:30 AM', '9:15 AM', '10:00 AM', '10:45 AM', '11:30 AM', '12:15 PM', '2:00 PM'];
 export const DIAS_NOMBRES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
 export const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];

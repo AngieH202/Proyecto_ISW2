@@ -4,7 +4,7 @@
 // contenido de los estaticos. Cambiarla renombra las caches, y activate
 // borra las viejas: eso es todo el mecanismo de invalidacion tras un
 // deploy.
-const VERSION = '3af83a0b';
+const VERSION = '00698adb';
 
 const CACHE_ESTATICOS = `dentaagenda-estaticos-${VERSION}`;
 const CACHE_DATOS = `dentaagenda-datos-${VERSION}`;

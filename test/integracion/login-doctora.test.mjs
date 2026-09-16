@@ -51,7 +51,7 @@ globalThis.fetch = async (url, opts = {}) => {
 
 await import(MODULOS + 'app.js');
 const { cerrarSesion, haySesion } = await import(MODULOS + 'modules/sesion.js');
-const { DOCTORA_USUARIO, DOCTORA_EMAIL } = await import(MODULOS + 'modules/config.js');
+const { DOCTORA_USUARIO, DOCTORA_EMAIL, DEMO_USUARIO, DEMO_EMAIL } = await import(MODULOS + 'modules/config.js');
 
 async function ingresar(usuario, pass) {
   escribir('d-usuario', usuario);
@@ -127,6 +127,35 @@ describe('el login de la doctora', () => {
     assert.equal(globalThis.location.href, '', 'sin cookie válida no tiene sentido ir a /admin');
     assert.match(el('form-error').textContent, /no pudimos iniciar la sesión/i);
     assert.equal(el('btn-doc').disabled, false);
+  });
+});
+
+describe('la cuenta de demostración', () => {
+  test('entra al portal con su propio correo, no con el de la doctora', async () => {
+    await ingresar(DEMO_USUARIO, CLAVE_BUENA);
+
+    const login = aRuta('/auth/v1/token')[0];
+    assert.equal(login.cuerpo.email, DEMO_EMAIL);
+    assert.notEqual(login.cuerpo.email, DOCTORA_EMAIL, 'la demo no usa la cuenta del cliente');
+    assert.equal(globalThis.location.href, '/admin');
+  });
+
+  test('sigue sin entrar cualquier otro usuario', async () => {
+    await ingresar('demo2', CLAVE_BUENA);
+
+    assert.equal(peticiones.length, 0);
+    assert.match(el('form-error').textContent, /usuario o contraseña incorrectos/i);
+  });
+
+  test('un nombre heredado de Object no cuenta como cuenta', async () => {
+    // CUENTAS[usuario] a secas daria una funcion para "constructor" o
+    // "toString", y eso es truthy: alcanzaria para pasar la puerta.
+    for (const heredado of ['constructor', 'toString', '__proto__']) {
+      await ingresar(heredado, CLAVE_BUENA);
+
+      assert.equal(peticiones.length, 0, `${heredado} no debería salir a la red`);
+      assert.equal(globalThis.location.href, '', `${heredado} no debería entrar`);
+    }
   });
 });
 
