@@ -13,7 +13,9 @@ export function setRole(r) {
 }
 
 export async function loginDoctora() {
-  const usuario = document.getElementById('d-usuario').value.trim();
+  // A minusculas: los teclados de los telefonos capitalizan la primera
+  // letra sin avisar, y "Demo" no es una cuenta distinta de "demo".
+  const usuario = document.getElementById('d-usuario').value.trim().toLowerCase();
   const pass = document.getElementById('d-pass').value.trim();
   if (!usuario || !pass) {
     showError('Completá todos los campos.');

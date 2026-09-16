@@ -140,6 +140,15 @@ describe('la cuenta de demostración', () => {
     assert.equal(globalThis.location.href, '/admin');
   });
 
+  test('no importa como venga capitalizado', async () => {
+    // El teclado del telefono manda "Demo" aunque se escriba "demo".
+    for (const escrito of ['Demo', 'DEMO', '  Demo  ']) {
+      await ingresar(escrito, CLAVE_BUENA);
+
+      assert.equal(globalThis.location.href, '/admin', `${escrito} debería entrar`);
+    }
+  });
+
   test('sigue sin entrar cualquier otro usuario', async () => {
     await ingresar('demo2', CLAVE_BUENA);
 
