@@ -16,7 +16,7 @@
     }
   })();
 </script>
-<link rel="stylesheet" href="/assets/css/app.css?v=77f61b2a">
+<link rel="stylesheet" href="/assets/css/app.css?v=b3d50ec9">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/assets/icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/icono-192.png">
@@ -65,16 +65,16 @@
     </div>
     <div class="login-card">
       <div class="role-tabs">
-        <button class="role-tab active" onclick="setRole('doctora')">&#9673; Doctora</button>
-        <button class="role-tab" onclick="setRole('paciente')">&#9786; Paciente</button>
+        <button class="role-tab" onclick="setRole('doctora')">&#9673; Doctora</button>
+        <button class="role-tab active" onclick="setRole('paciente')">&#9786; Paciente</button>
       </div>
       <div id="form-error" class="error-msg"></div>
-      <div id="login-doctora" class="login-form active">
+      <div id="login-doctora" class="login-form">
         <div class="form-group"><label for="d-usuario">Usuario</label><input type="text" id="d-usuario" placeholder="belki.den"></div>
         <div class="form-group"><label for="d-pass">Contraseña</label><input type="password" id="d-pass" placeholder="••••••••"></div>
         <button class="btn-primary" id="btn-doc" onclick="loginDoctora()">Ingresar</button>
       </div>
-      <div id="login-paciente" class="login-form">
+      <div id="login-paciente" class="login-form active">
         <div class="form-group"><label for="p-nombre">Nombre completo</label><input type="text" id="p-nombre" placeholder="Ej: María López"></div>
         <div class="form-group"><label for="p-id">Número de identidad</label><input type="text" id="p-id" placeholder="Ej: 0801-1990-12345"></div>
         <div class="form-group"><label for="p-edad">Edad</label><input type="number" id="p-edad" placeholder="Ej: 34" min="1" max="120"></div>
@@ -193,7 +193,7 @@
 
 </div>
 
-  <script type="module" src="/assets/js/app.js?v=77f61b2a"></script>
+  <script type="module" src="/assets/js/app.js?v=b3d50ec9"></script>
 
   <script>
     // El service worker solo se registra sobre HTTPS o localhost; en

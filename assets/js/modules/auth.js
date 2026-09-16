@@ -290,6 +290,14 @@ export function logout() {
   showScreen('login');
 }
 
+// El rol inicial lo fija el HTML, y es paciente: quien entra por la
+// landing viene a pedir una cita, no a administrar. La unica excepcion
+// es haber rebotado de /admin -- api/admin.js redirige con desde=admin
+// --, donde lo que hace falta es el formulario de la doctora.
+if (new URLSearchParams(globalThis.location?.search ?? '').get('desde') === 'admin') {
+  setRole('doctora');
+}
+
 // Sólo lo que el HTML invoca desde atributos onclick.
 window.setRole = setRole;
 window.loginDoctora = loginDoctora;
