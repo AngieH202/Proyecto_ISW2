@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DentaAgenda</title>
+<meta name="description" content="Sistema de citas odontológicas para la clínica de la Dra. Belkis Suisse. Presentación y manual de uso.">
+<meta name="verificacion" content="LEARN-CAP-C72DC553">
+<meta name="author" content="Angie Hernández">
+<meta name="theme-color" content="#0077B6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230077B6' d='M12 2C8 2 4 5 4 9c0 5 8 13 8 13s8-8 8-13c0-4-4-7-8-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5S10.6 6.5 12 6.5s2.5 1.1 2.5 2.5S13.4 11.5 12 11.5z'/%3E%3C/svg%3E">
+<style>
+:root{
+  --tinta:#03045E;
+  --azul:#0077B6;
+  --cyan:#00B4D8;
+  --hielo:#EAF4FB;
+  --papel:#FBFDFE;
+  --superficie:#FFFFFF;
+  --borde:#CDE3F0;
+  --borde-suave:#E4F0F8;
+  --gris:#54748A;
+  --ok:#1B7F5A;
+  --espera:#8A5D00;
+  --alto:#B23A2F;
+  --realce:#F2F9FD;
+
+  --display:Georgia,"Iowan Old Style","Times New Roman",serif;
+  --texto:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --dato:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --tinta:#E8F4FC;
+    --azul:#4FB3E0;
+    --cyan:#67D6F0;
+    --hielo:#111E2B;
+    --papel:#0B1520;
+    --superficie:#111E2B;
+    --borde:#26425A;
+    --borde-suave:#1C3245;
+    --gris:#93B2C6;
+    --ok:#4FC49A;
+    --espera:#D9A63C;
+    --alto:#E8796C;
+    --realce:#15273699;
+  }
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+body{
+  margin:0;
+  background:var(--papel);
+  color:var(--tinta);
+  font-family:var(--texto);
+  font-size:16px;
+  line-height:1.62;
+  -webkit-text-size-adjust:100%;
+}
+
+a{color:var(--azul);text-underline-offset:3px;text-decoration-thickness:1px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:2px}
+
+/* ── Navegación ─────────────────────────────────────────── */
+.barra{
+  position:sticky;top:0;z-index:10;
+  background:var(--papel);
+  background:color-mix(in srgb,var(--papel) 92%,transparent);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--borde-suave);
+}
+.barra-int{
+  max-width:1060px;margin:0 auto;
+  padding-block:10px;padding-left:20px;padding-right:20px;
+  display:flex;gap:18px;align-items:center;flex-wrap:wrap;
+}
+.marca{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:.2px;white-space:nowrap}
+.marca svg{width:20px;height:20px;fill:var(--azul);flex-shrink:0}
+.barra nav{display:flex;gap:14px;flex-wrap:wrap;font-size:13px}
+.barra nav a{color:var(--gris);text-decoration:none}
+.barra nav a:hover{color:var(--azul);text-decoration:underline}
+
+/* ── Contenedores ───────────────────────────────────────── */
+.envoltura{max-width:1060px;margin:0 auto;padding-left:20px;padding-right:20px}
+.lectura{max-width:65ch}
+
+section{padding-block:56px;border-top:1px solid var(--borde-suave)}
+section:first-of-type{border-top:none}
+
+.rotulo{
+  font-family:var(--dato);
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--azul);margin:0 0 10px;
+}
+
+h1,h2,h3{font-family:var(--display);font-weight:normal;text-wrap:balance;margin:0}
+h1{font-size:clamp(32px,6.4vw,54px);line-height:1.1;letter-spacing:-.015em}
+h2{font-size:clamp(25px,4vw,34px);line-height:1.18;margin-bottom:14px}
+h3{font-size:19px;line-height:1.3;margin:28px 0 8px}
+p{margin:0 0 16px}
+.lectura p:last-child{margin-bottom:0}
+
+.guia{font-size:18px;line-height:1.55;color:var(--gris)}
+
+/* ── Portada ────────────────────────────────────────────── */
+.portada{padding-block:60px 48px}
+.portada h1{margin-bottom:18px}
+.portada .guia{max-width:56ch;font-size:clamp(17px,2.3vw,20px)}
+.acciones{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.btn{
+  display:inline-block;padding:11px 20px;border-radius:6px;
+  font-size:14px;font-weight:600;text-decoration:none;
+}
+.btn-lleno{background:var(--azul);color:#fff}
+.btn-lleno:hover{background:var(--tinta)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .btn-lleno{color:#06131D}
+  :root:not([data-theme="light"]) .btn-lleno:hover{background:var(--cyan)}
+}
+.btn-linea{border:1px solid var(--borde);color:var(--tinta)}
+.btn-linea:hover{border-color:var(--azul);color:var(--azul)}
+
+.ficha{
+  margin-top:36px;border:1px solid var(--borde);border-radius:8px;
+  background:var(--superficie);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+}
+.ficha div{padding:14px 16px;border-right:1px solid var(--borde-suave)}
+.ficha div:last-child{border-right:none}
+.ficha dt{
+  font-family:var(--dato);font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--gris);margin-bottom:5px;
+}
+.ficha dd{margin:0;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ── Texto ──────────────────────────────────────────────── */
+ul,ol{margin:0 0 16px;padding-left:22px}
+li{margin-bottom:9px}
+li::marker{color:var(--azul)}
+strong{font-weight:650}
+code{
+  font-family:var(--dato);font-size:.88em;
+  background:var(--hielo);padding:1px 5px;border-radius:3px;
+  color:var(--tinta);
+}
+
+.cita{
+  border-left:3px solid var(--cyan);padding-left:18px;
+  font-family:var(--display);font-size:19px;line-height:1.45;
+  color:var(--tinta);margin:0 0 20px;
+}
+
+/* ── Rejillas ───────────────────────────────────────────── */
+.rejilla{display:grid;gap:26px 34px;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));margin-top:6px}
+.rejilla h3{margin-top:0}
+.rejilla p{font-size:15px;color:var(--gris);margin-bottom:0}
+
+.pila{display:grid;gap:0;margin-top:22px;border-top:1px solid var(--borde-suave)}
+.fila{
+  display:grid;grid-template-columns:190px 1fr;gap:6px 26px;
+  padding-block:15px;border-bottom:1px solid var(--borde-suave);
+}
+.fila dt{font-weight:650;font-size:15px}
+.fila dd{margin:0;font-size:15px;color:var(--gris)}
+@media (max-width:640px){.fila{grid-template-columns:1fr}}
+
+/* ── Pasos ──────────────────────────────────────────────── */
+.pasos{list-style:none;padding:0;margin:22px 0 0;counter-reset:paso}
+.paso{
+  counter-increment:paso;position:relative;
+  padding:0 0 26px 52px;border-left:1px solid var(--borde);
+  margin-left:15px;
+}
+.paso:last-child{border-left-color:transparent;padding-bottom:0}
+.paso::before{
+  content:counter(paso);
+  position:absolute;left:-15px;top:-2px;
+  width:30px;height:30px;border-radius:50%;
+  background:var(--azul);color:#fff;
+  display:grid;place-items:center;
+  font-family:var(--dato);font-size:13px;font-weight:600;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .paso::before{color:#06131D}}
+.paso h3{margin:0 0 5px;font-size:17px}
+.paso p{font-size:15px;color:var(--gris);margin-bottom:0}
+
+/* ── Estados ────────────────────────────────────────────── */
+.estados{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px;padding:0;list-style:none}
+.pill{
+  font-family:var(--dato);font-size:11.5px;letter-spacing:.04em;
+  padding:4px 11px;border-radius:20px;border:1px solid currentColor;
+}
+.pill-espera{color:var(--espera)}
+.pill-ok{color:var(--ok)}
+.pill-alto{color:var(--alto)}
+.pill-neutro{color:var(--gris)}
+
+/* ── Figuras ────────────────────────────────────────────── */
+figure{margin:30px 0 0}
+/* Los diagramas se dibujan con la paleta de la app, que es clara.
+   El lienzo se queda claro en los dos temas: es una lámina, no una
+   superficie de la página. Así el texto del SVG siempre contrasta. */
+.lienzo{
+  border:1px solid var(--borde);border-radius:8px;
+  background:#FFFFFF;padding:18px;
+  overflow-x:auto;
+}
+.lienzo svg{display:block;max-width:100%;height:auto}
+.lienzo.ancho svg{min-width:640px;max-width:none}
+figcaption{
+  font-size:13px;color:var(--gris);margin-top:10px;
+  max-width:62ch;line-height:1.5;
+}
+.duo{display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:30px}
+.duo figure{margin:0}
+
+/* ── Verificación ───────────────────────────────────────── */
+.sello{
+  margin-top:30px;border:1px solid var(--borde);border-left:3px solid var(--cyan);
+  border-radius:6px;background:var(--realce);padding:18px 20px;
+}
+.sello p{font-size:14px;color:var(--gris);margin:0 0 10px}
+.codigo{
+  font-family:var(--dato);font-size:clamp(15px,3.4vw,19px);
+  font-weight:600;letter-spacing:.06em;color:var(--tinta);
+  display:block;word-break:break-all;
+}
+
+footer{
+  border-top:1px solid var(--borde-suave);
+  padding-block:32px 44px;
+  font-size:13.5px;color:var(--gris);
+}
+footer a{color:var(--gris)}
+</style>
+</head>
+<body>
+
+<header class="barra">
+  <div class="barra-int">
+    <span class="marca">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8 2 4 5 4 9c0 5 8 13 8 13s8-8 8-13c0-4-4-7-8-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5S10.6 6.5 12 6.5s2.5 1.1 2.5 2.5S13.4 11.5 12 11.5z"/></svg>
+      DentaAgenda
+    </span>
+    <nav aria-label="Secciones">
+      <a href="#problema">Problema</a>
+      <a href="#solucion">Solución</a>
+      <a href="#funcionalidades">Funcionalidades</a>
+      <a href="#arquitectura">Arquitectura</a>
+      <a href="#tecnologias">Tecnologías</a>
+      <a href="#manual">Manual</a>
+      <a href="#cliente">Cliente</a>
+      <a href="#autor">Autora</a>
+    </nav>
+  </div>
+</header>
+
+<main class="envoltura">
+
+  <!-- ══ PORTADA ══ -->
+  <section class="portada">
+    <p class="rotulo">Clínica odontológica Dra. Belkis Suisse</p>
+    <h1>Dos personas no pueden agendar el mismo horario</h1>
+    <p class="guia">DentaAgenda es el sistema de citas y expedientes clínicos de una consulta odontológica real. El paciente agenda desde su teléfono sin crear una cuenta; la doctora confirma, atiende y registra la visita. La garantía de que no haya dos citas a las 10:00 vive en la base de datos, no en una convención del código.</p>
+    <div class="acciones">
+      <a class="btn btn-lleno" href="https://www.angiehernndz.lat">Ver el producto en vivo</a>
+      <a class="btn btn-linea" href="https://github.com/AngieH202/Proyecto_ISW2">Código en GitHub</a>
+    </div>
+    <dl class="ficha">
+      <div><dt>Perfiles</dt><dd>Paciente y doctora</dd></div>
+      <div><dt>Dependencias</dt><dd>0</dd></div>
+      <div><dt>Pruebas automáticas</dt><dd>150 en verde</dd></div>
+      <div><dt>Funciona sin conexión</dt><dd>Sí, en lectura</dd></div>
+    </dl>
+  </section>
+
+  <!-- ══ 1. PROBLEMA ══ -->
+  <section id="problema">
+    <p class="rotulo">El problema</p>
+    <div class="lectura">
+      <h2>Una agenda repartida entre un cuaderno y un chat</h2>
+      <p>La consulta de la Dra. Suisse agendaba por mensajes. Un paciente escribía pidiendo turno, alguien anotaba el nombre y la hora en un cuaderno, y el expediente clínico —diagnósticos, tratamientos, medicamentos recetados— vivía en carpetas de papel detrás del sillón.</p>
+      <p>Ese arreglo falla de tres formas, y ninguna se arregla con más disciplina:</p>
+      <ul>
+        <li><strong>La doble reserva.</strong> Dos mensajes pidiendo el martes a las 10:00 llegan con minutos de diferencia. Si los dos se anotan, el martes hay dos personas esperando en la puerta y ya no hay forma elegante de resolverlo: alguien se va a su casa.</li>
+        <li><strong>El estado invisible.</strong> El paciente que escribió el jueves no sabe si su cita quedó confirmada. Vuelve a escribir. La consulta atiende el mismo caso tres veces.</li>
+        <li><strong>El historial que no acompaña.</strong> Saber qué se le hizo a un paciente hace ocho meses exige levantarse a buscar una carpeta, durante la consulta, con el paciente en el sillón.</li>
+      </ul>
+      <p>El costo real no es administrativo: es el paciente que llega puntual a una cita que no existe.</p>
+    </div>
+  </section>
+
+  <!-- ══ 2. SOLUCIÓN ══ -->
+  <section id="solucion">
+    <p class="rotulo">La solución</p>
+    <div class="lectura">
+      <h2>Una sola fuente de verdad, y la exclusión escrita en la base</h2>
+      <p>DentaAgenda es una aplicación web que sirve a los dos lados del mostrador desde el mismo dominio, con dos recorridos que no se cruzan.</p>
+      <p>El paciente entra con su número de identidad. No hay registro, no hay contraseña que recordar, no hay correo de confirmación: para alguien que va al dentista dos veces al año, crear una cuenta es una barrera más alta que el trámite que viene a hacer. Ve el calendario de la semana, sólo días hábiles, y de cada día sólo los horarios que siguen libres.</p>
+      <p>La doctora entra con usuario y contraseña a un portal privado que ni siquiera se descarga sin sesión válida. Ahí ve la agenda del día, las solicitudes que esperan respuesta y el expediente de cada paciente.</p>
+      <p class="cita">La regla de que un horario es de una sola persona no es una validación del formulario: es un índice único parcial en PostgreSQL. Si dos solicitudes compiten por el mismo turno, la base rechaza la segunda aunque lleguen en el mismo milisegundo.</p>
+      <p>Esa decisión recorre todo el sistema. Cada operación es idempotente: repetirla deja exactamente el mismo estado. Un doble clic nervioso, un reintento después de que se cayó el wifi o una segunda pestaña abierta no duplican una cita ni una visita clínica.</p>
+    </div>
+
+    <figure>
+      <div class="lienzo ancho">
+        <svg viewBox="0 0 700 250" role="img" aria-labelledby="t-carrera">
+          <title id="t-carrera">Dos solicitudes simultáneas para el mismo horario: la base acepta una y rechaza la otra</title>
+          <rect x="0" y="0" width="700" height="250" fill="none"/>
+
+          <text x="16" y="24" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" letter-spacing="1.4" fill="#54748A">MARTES 10:00 — DOS SOLICITUDES A LA VEZ</text>
+
+          <rect x="16" y="46" width="176" height="52" rx="7" fill="#EAF4FB" stroke="#CDE3F0"/>
+          <text x="32" y="70" font-family="-apple-system,Segoe UI,sans-serif" font-size="14" font-weight="600" fill="#03045E">Paciente A</text>
+          <text x="32" y="88" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#54748A">10:00:04.180</text>
+
+          <rect x="16" y="152" width="176" height="52" rx="7" fill="#EAF4FB" stroke="#CDE3F0"/>
+          <text x="32" y="176" font-family="-apple-system,Segoe UI,sans-serif" font-size="14" font-weight="600" fill="#03045E">Paciente B</text>
+          <text x="32" y="194" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#54748A">10:00:04.211</text>
+
+          <path d="M192 72 L282 72 L282 108 L318 108" fill="none" stroke="#0077B6" stroke-width="1.6"/>
+          <path d="M192 178 L282 178 L282 142 L318 142" fill="none" stroke="#0077B6" stroke-width="1.6"/>
+          <path d="M318 108 l-8 -4 l0 8 z" fill="#0077B6"/>
+          <path d="M318 142 l-8 -4 l0 8 z" fill="#0077B6"/>
+
+          <rect x="320" y="86" width="186" height="78" rx="7" fill="#FFFFFF" stroke="#0077B6" stroke-width="1.6"/>
+          <text x="338" y="110" font-family="-apple-system,Segoe UI,sans-serif" font-size="13" font-weight="600" fill="#03045E">crear_solicitud()</text>
+          <text x="338" y="130" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#54748A">índice único parcial</text>
+          <text x="338" y="147" font-family="ui-monospace,Menlo,monospace" font-size="10.5" fill="#54748A">una sola sentencia</text>
+
+          <path d="M506 110 L566 110 L566 72 L600 72" fill="none" stroke="#1B7F5A" stroke-width="1.6"/>
+          <path d="M506 140 L566 140 L566 178 L600 178" fill="none" stroke="#B23A2F" stroke-width="1.6"/>
+          <path d="M600 72 l-8 -4 l0 8 z" fill="#1B7F5A"/>
+          <path d="M600 178 l-8 -4 l0 8 z" fill="#B23A2F"/>
+
+          <rect x="602" y="50" width="82" height="44" rx="7" fill="#FFFFFF" stroke="#1B7F5A" stroke-width="1.4"/>
+          <text x="643" y="70" text-anchor="middle" font-family="-apple-system,Segoe UI,sans-serif" font-size="12.5" font-weight="600" fill="#1B7F5A">creada</text>
+          <text x="643" y="85" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#54748A">pendiente</text>
+
+          <rect x="602" y="156" width="82" height="44" rx="7" fill="#FFFFFF" stroke="#B23A2F" stroke-width="1.4"/>
+          <text x="643" y="176" text-anchor="middle" font-family="-apple-system,Segoe UI,sans-serif" font-size="12.5" font-weight="600" fill="#B23A2F">ocupado</text>
+          <text x="643" y="191" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#54748A">vuelve al paso 3</text>
+
+          <text x="16" y="236" font-family="-apple-system,Segoe UI,sans-serif" font-size="11.5" fill="#54748A">B no ve un error: vuelve a la grilla de horarios, ya sin las 10:00.</text>
+        </svg>
+      </div>
+      <figcaption>La comprobación y la inserción ocurren en la misma sentencia SQL, así que entre «¿está libre?» y «reservado» no queda una rendija por donde entre una segunda solicitud.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ══ 3. FUNCIONALIDADES ══ -->
+  <section id="funcionalidades">
+    <p class="rotulo">Funcionalidades</p>
+    <div class="lectura">
+      <h2>Qué hace cada lado</h2>
+      <p>Una cita atraviesa cinco estados, y cada uno significa algo distinto para quien lo mira:</p>
+    </div>
+    <ul class="estados">
+      <li class="pill pill-espera">pendiente</li>
+      <li class="pill pill-ok">confirmada</li>
+      <li class="pill pill-ok">atendida</li>
+      <li class="pill pill-neutro">no asistió</li>
+      <li class="pill pill-alto">cancelada</li>
+    </ul>
+
+    <div class="rejilla">
+      <div>
+        <h3>Agendar sin cuenta</h3>
+        <p>El paciente se identifica con su número de identidad. Elige día y hora en un calendario semanal que sólo ofrece días hábiles, y los horarios ya tomados o ya pasados aparecen bloqueados.</p>
+      </div>
+      <div>
+        <h3>Consultar el estado</h3>
+        <p>Con el mismo número, el paciente ve en qué quedó su solicitud sin llamar a la clínica. La consulta nunca devuelve citas de otra persona.</p>
+      </div>
+      <div>
+        <h3>Cancelar</h3>
+        <p>El paciente puede cancelar. El horario vuelve a estar libre para los demás en ese mismo instante, y a la doctora le aparece el aviso de quién canceló.</p>
+      </div>
+      <div>
+        <h3>Agenda del día</h3>
+        <p>La doctora abre en el próximo día hábil, con las citas de esa fecha, su estado y un resumen contado del día. Navega hacia adelante y atrás saltando fines de semana.</p>
+      </div>
+      <div>
+        <h3>Confirmar o rechazar</h3>
+        <p>Las solicitudes pendientes se revisan aparte. Rechazar una cancela la cita y libera el horario, que vuelve a ofrecerse a los pacientes.</p>
+      </div>
+      <div>
+        <h3>Expediente clínico</h3>
+        <p>Buscador por nombre o número de identidad, con el historial completo de visitas de cada paciente y el contador de visitas siempre igual al conteo real.</p>
+      </div>
+      <div>
+        <h3>Registrar la visita</h3>
+        <p>Al atender, la doctora anota diagnóstico, tratamientos realizados —limpieza, endodoncia, corona—, medicamentos recetados, plan y notas. Guardar dos veces no duplica la visita.</p>
+      </div>
+      <div>
+        <h3>Uso sin conexión</h3>
+        <p>Instalada como aplicación, la app abre y muestra lo último que se vio aunque no haya señal. Lo que no hace sin red es escribir, y eso es deliberado.</p>
+      </div>
+    </div>
+
+    <div class="duo">
+      <figure>
+        <div class="lienzo">
+          <svg viewBox="0 0 300 380" role="img" aria-labelledby="t-paciente">
+            <title id="t-paciente">Pantalla del paciente: calendario semanal y horarios disponibles</title>
+            <rect x="0" y="0" width="300" height="380" rx="12" fill="#FFFFFF" stroke="#CDE3F0"/>
+            <path d="M0 12a12 12 0 0 1 12-12h276a12 12 0 0 1 12 12v40H0z" fill="#0077B6"/>
+            <circle cx="26" cy="27" r="9" fill="#FFFFFF" opacity=".25"/>
+            <text x="44" y="32" font-family="-apple-system,Segoe UI,sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">DentaAgenda</text>
+
+            <text x="20" y="78" font-family="-apple-system,Segoe UI,sans-serif" font-size="13" font-weight="600" fill="#03045E">Elegí el día</text>
+
+            <g font-family="-apple-system,Segoe UI,sans-serif" font-size="9.5" fill="#54748A" text-anchor="middle">
+              <rect x="20" y="90" width="48" height="52" rx="8" fill="#F4FAFD" stroke="#CDE3F0"/>
+              <text x="44" y="108">LUN</text><text x="44" y="126" font-size="15" font-weight="600" fill="#03045E">15</text>
+              <rect x="76" y="90" width="48" height="52" rx="8" fill="#0077B6" stroke="#0077B6"/>
+              <text x="100" y="108" fill="#CFE8F6">MAR</text><text x="100" y="126" font-size="15" font-weight="600" fill="#FFFFFF">16</text>
+              <rect x="132" y="90" width="48" height="52" rx="8" fill="#F4FAFD" stroke="#CDE3F0"/>
+              <text x="156" y="108">MIÉ</text><text x="156" y="126" font-size="15" font-weight="600" fill="#03045E">17</text>
+              <rect x="188" y="90" width="48" height="52" rx="8" fill="#F4FAFD" stroke="#CDE3F0"/>
+              <text x="212" y="108">JUE</text><text x="212" y="126" font-size="15" font-weight="600" fill="#03045E">18</text>
+              <rect x="244" y="90" width="36" height="52" rx="8" fill="#F4FAFD" stroke="#CDE3F0"/>
+              <text x="262" y="108">VIE</text><text x="262" y="126" font-size="15" font-weight="600" fill="#03045E">19</text>
+            </g>
+
+            <text x="20" y="172" font-family="-apple-system,Segoe UI,sans-serif" font-size="13" font-weight="600" fill="#03045E">Horarios libres</text>
+
+            <g font-family="-apple-system,Segoe UI,sans-serif" font-size="12.5" text-anchor="middle">
+              <rect x="20" y="184" width="80" height="38" rx="8" fill="#FFFFFF" stroke="#CDE3F0"/>
+              <text x="60" y="208" fill="#03045E">08:00</text>
+              <rect x="110" y="184" width="80" height="38" rx="8" fill="#EDF1F3" stroke="#DCE4E8"/>
+              <text x="150" y="208" fill="#9DB0BC">09:00</text>
+              <rect x="200" y="184" width="80" height="38" rx="8" fill="#EDF1F3" stroke="#DCE4E8"/>
+              <text x="240" y="208" fill="#9DB0BC">10:00</text>
+              <rect x="20" y="230" width="80" height="38" rx="8" fill="#FFFFFF" stroke="#CDE3F0"/>
+              <text x="60" y="254" fill="#03045E">11:00</text>
+              <rect x="110" y="230" width="80" height="38" rx="8" fill="#00B4D8" stroke="#00B4D8"/>
+              <text x="150" y="254" fill="#FFFFFF" font-weight="600">14:00</text>
+              <rect x="200" y="230" width="80" height="38" rx="8" fill="#FFFFFF" stroke="#CDE3F0"/>
+              <text x="240" y="254" fill="#03045E">15:00</text>
+            </g>
+
+            <text x="20" y="290" font-family="-apple-system,Segoe UI,sans-serif" font-size="10.5" fill="#9DB0BC">Las horas en gris ya están tomadas.</text>
+
+            <rect x="20" y="306" width="260" height="42" rx="8" fill="#0077B6"/>
+            <text x="150" y="332" text-anchor="middle" font-family="-apple-system,Segoe UI,sans-serif" font-size="13.5" font-weight="600" fill="#FFFFFF">Solicitar cita</text>
+          </svg>
+        </div>
+        <figcaption>Paso 3 del flujo del paciente. Los horarios ocupados y los que ya pasaron no se pueden pulsar.</figcaption>
+      </figure>
+
+      <figure>
+        <div class="lienzo">
+          <svg viewBox="0 0 300 380" role="img" aria-labelledby="t-doctora">
+            <title id="t-doctora">Panel de la doctora: agenda del día con el resumen y las citas</title>
+            <rect x="0" y="0" width="300" height="380" rx="12" fill="#FFFFFF" stroke="#CDE3F0"/>
+            <path d="M0 12a12 12 0 0 1 12-12h276a12 12 0 0 1 12 12v40H0z" fill="#03045E"/>
+            <text x="20" y="32" font-family="-apple-system,Segoe UI,sans-serif" font-size="13" font-weight="600" fill="#FFFFFF">Portal de la doctora</text>
+            <rect x="228" y="16" width="52" height="22" rx="6" fill="#FFFFFF" opacity=".2"/>
+            <text x="254" y="31" text-anchor="middle" font-family="-apple-system,Segoe UI,sans-serif" font-size="10.5" fill="#FFFFFF">Salir</text>
+
+            <g font-family="-apple-system,Segoe UI,sans-serif" font-size="11.5" text-anchor="middle">
+              <rect x="14" y="64" width="88" height="28" rx="7" fill="#0077B6"/>
+              <text x="58" y="83" fill="#FFFFFF" font-weight="600">Agenda</text>
+              <text x="150" y="83" fill="#54748A">Pendientes</text>
+              <circle cx="196" cy="79" r="8" fill="#FFF3CD"/>
+              <text x="196" y="83" font-size="9.5" fill="#8A5D00" font-weight="700">2</text>
+              <text x="252" y="83" fill="#54748A">Expedientes</text>
+            </g>
+
+            <text x="20" y="118" font-family="Georgia,serif" font-size="14" fill="#03045E">Martes, 16 de septiembre</text>
+            <text x="20" y="134" font-family="-apple-system,Segoe UI,sans-serif" font-size="10.5" fill="#54748A">Hoy</text>
+
+            <g font-family="-apple-system,Segoe UI,sans-serif" text-anchor="middle">
+              <rect x="20" y="146" width="80" height="50" rx="8" fill="#F4FAFD" stroke="#CDE3F0"/>
+              <text x="60" y="172" font-size="19" font-weight="600" fill="#0077B6">6</text>
+              <text x="60" y="187" font-size="9.5" fill="#54748A">citas</text>
+              <rect x="110" y="146" width="80" height="50" rx="8" fill="#F4FAFD" stroke="#CDE3F0"/>
+              <text x="150" y="172" font-size="19" font-weight="600" fill="#1B7F5A">4</text>
+              <text x="150" y="187" font-size="9.5" fill="#54748A">confirmadas</text>
+              <rect x="200" y="146" width="80" height="50" rx="8" fill="#F4FAFD" stroke="#CDE3F0"/>
+              <text x="240" y="172" font-size="19" font-weight="600" fill="#8A5D00">2</text>
+              <text x="240" y="187" font-size="9.5" fill="#54748A">pendientes</text>
+            </g>
+
+            <g font-family="-apple-system,Segoe UI,sans-serif">
+              <rect x="20" y="212" width="260" height="48" rx="8" fill="#FFFFFF" stroke="#CDE3F0"/>
+              <rect x="20" y="212" width="3.5" height="48" rx="2" fill="#1B7F5A"/>
+              <text x="36" y="232" font-size="12.5" font-weight="600" fill="#03045E">08:00 · María Fuentes</text>
+              <text x="36" y="249" font-size="10.5" fill="#54748A">Limpieza · confirmada</text>
+
+              <rect x="20" y="268" width="260" height="48" rx="8" fill="#FFFFFF" stroke="#CDE3F0"/>
+              <rect x="20" y="268" width="3.5" height="48" rx="2" fill="#8A5D00"/>
+              <text x="36" y="288" font-size="12.5" font-weight="600" fill="#03045E">10:00 · Jorge Medina</text>
+              <text x="36" y="305" font-size="10.5" fill="#54748A">Dolor molar · pendiente</text>
+
+              <rect x="20" y="324" width="260" height="42" rx="8" fill="#FFFFFF" stroke="#CDE3F0"/>
+              <rect x="20" y="324" width="3.5" height="42" rx="2" fill="#54748A"/>
+              <text x="36" y="350" font-size="12.5" fill="#54748A">11:00 · horario libre</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>La agenda del día. La franja de color a la izquierda codifica el estado, para leer la jornada de un vistazo.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ══ 4. ARQUITECTURA ══ -->
+  <section id="arquitectura">
+    <p class="rotulo">Arquitectura</p>
+    <div class="lectura">
+      <h2>Dos recorridos que no comparten nada más que el dominio</h2>
+      <p>El sitio es estático: no hay servidor de aplicación ni paso de compilación. Lo acompañan cuatro funciones sin servidor en Vercel, que existen por una sola razón: que las credenciales de la doctora nunca lleguen al navegador.</p>
+      <p>El paciente no toca ninguna tabla. Sus cuatro operaciones pasan por funciones <code>security definer</code> en PostgreSQL que exponen exactamente lo que necesita esa pantalla y nada más. Si alguien abre la consola del navegador y pide la tabla de expedientes con la clave pública, recibe un 404.</p>
+      <p>La doctora sí lee tablas, pero nunca directamente: el panel pide sus datos a un proxy que firma la consulta del lado del servidor con el token de la sesión. Ese token queda en una cookie <code>HttpOnly</code> y no baja al JavaScript. La razón es concreta: la aplicación arma HTML con <code>innerHTML</code> a partir de nombres y diagnósticos que escriben otras personas, así que entregarle el token al navegador sería regalárselo al primer ataque de inyección.</p>
+      <p>El panel privado va un paso más allá: su marcado no vive en el HTML público, sino en un módulo del servidor que no se publica como ruta. Sin una cookie válida, la petición responde con una redirección al login y ni una línea del contenido privado sale del servidor.</p>
+    </div>
+
+    <figure>
+      <div class="lienzo ancho">
+        <svg viewBox="0 0 700 330" role="img" aria-labelledby="t-arq">
+          <title id="t-arq">Arquitectura: navegador, funciones serverless y Supabase</title>
+
+          <rect x="12" y="34" width="196" height="280" rx="9" fill="#F4FAFD" stroke="#CDE3F0"/>
+          <text x="24" y="24" font-family="ui-monospace,Menlo,monospace" font-size="10.5" letter-spacing="1.2" fill="#54748A">NAVEGADOR</text>
+          <rect x="28" y="52" width="164" height="42" rx="6" fill="#FFFFFF" stroke="#CDE3F0"/>
+          <text x="42" y="72" font-family="-apple-system,Segoe UI,sans-serif" font-size="12.5" font-weight="600" fill="#03045E">App pública</text>
+          <text x="42" y="87" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#54748A">index.html · app.js</text>
+          <rect x="28" y="104" width="164" height="42" rx="6" fill="#FFFFFF" stroke="#CDE3F0"/>
+          <text x="42" y="124" font-family="-apple-system,Segoe UI,sans-serif" font-size="12.5" font-weight="600" fill="#03045E">Panel privado</text>
+          <text x="42" y="139" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#54748A">admin.js</text>
+          <rect x="28" y="156" width="164" height="42" rx="6" fill="#FFFFFF" stroke="#CDE3F0"/>
+          <text x="42" y="176" font-family="-apple-system,Segoe UI,sans-serif" font-size="12.5" font-weight="600" fill="#03045E">Service worker</text>
+          <text x="42" y="191" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#54748A">sw.js · sin conexión</text>
+
+          <rect x="256" y="34" width="180" height="280" rx="9" fill="#F4FAFD" stroke="#CDE3F0"/>
+          <text x="268" y="24" font-family="ui-monospace,Menlo,monospace" font-size="10.5" letter-spacing="1.2" fill="#54748A">SERVERLESS · /api</text>
+          <rect x="272" y="52" width="148" height="40" rx="6" fill="#FFFFFF" stroke="#CDE3F0"/>
+          <text x="286" y="71" font-family="-apple-system,Segoe UI,sans-serif" font-size="12.5" font-weight="600" fill="#03045E">Sesión</text>
+          <text x="286" y="85" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#54748A">cookie HttpOnly</text>
+          <rect x="272" y="102" width="148" height="40" rx="6" fill="#FFFFFF" stroke="#CDE3F0"/>
+          <text x="286" y="121" font-family="-apple-system,Segoe UI,sans-serif" font-size="12.5" font-weight="600" fill="#03045E">Portal</text>
+          <text x="286" y="135" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#54748A">marcado con sesión</text>
+          <rect x="272" y="152" width="148" height="40" rx="6" fill="#FFFFFF" stroke="#0077B6" stroke-width="1.5"/>
+          <text x="286" y="171" font-family="-apple-system,Segoe UI,sans-serif" font-size="12.5" font-weight="600" fill="#03045E">Proxy de datos</text>
+          <text x="286" y="185" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#54748A">firma del lado servidor</text>
+
+          <rect x="484" y="34" width="204" height="280" rx="9" fill="#F4FAFD" stroke="#CDE3F0"/>
+          <text x="496" y="24" font-family="ui-monospace,Menlo,monospace" font-size="10.5" letter-spacing="1.2" fill="#54748A">SUPABASE</text>
+          <rect x="500" y="52" width="172" height="40" rx="6" fill="#FFFFFF" stroke="#CDE3F0"/>
+          <text x="514" y="71" font-family="-apple-system,Segoe UI,sans-serif" font-size="12.5" font-weight="600" fill="#03045E">Auth</text>
+          <text x="514" y="85" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#54748A">login de la doctora</text>
+          <rect x="500" y="102" width="172" height="40" rx="6" fill="#FFFFFF" stroke="#CDE3F0"/>
+          <text x="514" y="121" font-family="-apple-system,Segoe UI,sans-serif" font-size="12.5" font-weight="600" fill="#03045E">PostgREST</text>
+          <text x="514" y="135" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#54748A">tablas y funciones</text>
+          <rect x="500" y="152" width="172" height="56" rx="6" fill="#FFFFFF" stroke="#CDE3F0"/>
+          <text x="514" y="172" font-family="-apple-system,Segoe UI,sans-serif" font-size="12.5" font-weight="600" fill="#03045E">PostgreSQL</text>
+          <text x="514" y="187" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#54748A">citas · expedientes</text>
+          <text x="514" y="200" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#54748A">visitas_clinicas · RLS</text>
+
+          <path d="M192 125 L272 172" fill="none" stroke="#0077B6" stroke-width="1.6"/>
+          <path d="M272 172 l-9 -1.5 l2.5 7.5 z" fill="#0077B6"/>
+          <path d="M420 172 L500 130" fill="none" stroke="#0077B6" stroke-width="1.6"/>
+          <path d="M500 130 l-8.5 2 l3 7 z" fill="#0077B6"/>
+
+          <path d="M192 73 C 330 73, 360 60, 500 118" fill="none" stroke="#00B4D8" stroke-width="1.6" stroke-dasharray="5 4"/>
+          <path d="M500 118 l-8.5 -2.5 l0.5 8 z" fill="#00B4D8"/>
+
+          <g font-family="-apple-system,Segoe UI,sans-serif" font-size="10.5">
+            <text x="228" y="243" fill="#0077B6" font-weight="600">Doctora</text>
+            <text x="228" y="258" fill="#54748A">tablas, firmadas en el servidor</text>
+            <text x="228" y="280" fill="#00B4D8" font-weight="600">Paciente</text>
+            <text x="228" y="295" fill="#54748A">sólo funciones RPC, nunca tablas</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>La línea continua es el camino de la doctora; la punteada, el del paciente. Ninguna de las dos manda credenciales de administración al navegador.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ══ 5. TECNOLOGÍAS ══ -->
+  <section id="tecnologias">
+    <p class="rotulo">Tecnologías</p>
+    <div class="lectura">
+      <h2>Cero dependencias, a propósito</h2>
+      <p>El proyecto no instala una sola biblioteca de terceros. No hay framework, ni bundler, ni paso de compilación: el navegador descarga los mismos módulos que están en el repositorio. Los scripts de mantenimiento y las pruebas usan únicamente la biblioteca estándar de Node.</p>
+      <p>La razón es de mantenimiento: cada dependencia es código de otra persona que hay que auditar, actualizar y explicar. Para una aplicación de este tamaño, la plataforma alcanza.</p>
+    </div>
+    <dl class="pila">
+      <div class="fila"><dt>Interfaz</dt><dd>HTML, CSS y módulos ES nativos. Sin framework, sin bundler, sin dependencias.</dd></div>
+      <div class="fila"><dt>Funciones de servidor</dt><dd>Cuatro funciones en Vercel: sesión, portal privado, proxy de datos y healthcheck.</dd></div>
+      <div class="fila"><dt>Base de datos</dt><dd>PostgreSQL en Supabase, expuesto por PostgREST, con seguridad a nivel de fila y trece migraciones numeradas.</dd></div>
+      <div class="fila"><dt>Aplicación instalable</dt><dd>Manifest y service worker propio: precarga de estáticos, caché de datos y funcionamiento sin conexión en lectura.</dd></div>
+      <div class="fila"><dt>Pruebas</dt><dd>150 casos en 47 grupos con el runner nativo de Node, contra un DOM mínimo y una base falsa que replica la semántica del SQL real.</dd></div>
+      <div class="fila"><dt>Integración continua</dt><dd>GitHub Actions en cada push y cada pull request contra la rama principal, con instalación bloqueada al archivo de versiones.</dd></div>
+      <div class="fila"><dt>Seguridad de entrega</dt><dd>Política de contenido estricta, cookies HttpOnly, HSTS y protección contra incrustación en marcos.</dd></div>
+      <div class="fila"><dt>Versionado de estáticos</dt><dd>Los archivos se sellan con el hash de su contenido, de modo que un despliegue nuevo invalida la caché anterior.</dd></div>
+    </dl>
+  </section>
+
+  <!-- ══ 6. MANUAL ══ -->
+  <section id="manual">
+    <p class="rotulo">Manual de uso</p>
+    <div class="lectura">
+      <h2>Cómo se usa, de punta a punta</h2>
+      <h3>Si sos paciente</h3>
+    </div>
+    <ol class="pasos">
+      <li class="paso">
+        <h3>Entrá al sitio</h3>
+        <p>Abrí <a href="https://www.angiehernndz.lat">www.angiehernndz.lat</a> desde el teléfono y tocá «Agendar una cita». Si querés, guardá la página en la pantalla de inicio: se instala como una aplicación.</p>
+      </li>
+      <li class="paso">
+        <h3>Identificate con tu número de identidad</h3>
+        <p>No hace falta crear una cuenta ni recordar una contraseña. La primera vez se te piden tus datos —nombre, teléfono, fecha de nacimiento—; las siguientes, sólo el número.</p>
+      </li>
+      <li class="paso">
+        <h3>Elegí el día</h3>
+        <p>El calendario muestra la semana hábil. Los fines de semana no aparecen porque la clínica no atiende. Podés moverte a la semana siguiente.</p>
+      </li>
+      <li class="paso">
+        <h3>Elegí la hora y contá el motivo</h3>
+        <p>Vas a ver sólo los horarios que siguen libres; los tomados y los que ya pasaron quedan bloqueados. Escribí brevemente el motivo de la consulta y enviá la solicitud.</p>
+      </li>
+      <li class="paso">
+        <h3>Seguí el estado</h3>
+        <p>Tu cita queda <strong>pendiente</strong> hasta que la doctora la revise. Volvé a entrar con tu número cuando quieras para ver si está confirmada, y usá «Cancelar» si no vas a poder ir: el horario se libera al instante para otra persona.</p>
+      </li>
+    </ol>
+
+    <div class="lectura" style="margin-top:44px">
+      <h3>Si sos la doctora</h3>
+    </div>
+    <ol class="pasos">
+      <li class="paso">
+        <h3>Iniciá sesión</h3>
+        <p>Entrá por <a href="https://www.angiehernndz.lat/login">/login</a> con tu correo y contraseña. El portal se abre en <a href="https://www.angiehernndz.lat/admin">/admin</a> y sólo existe mientras la sesión sea válida.</p>
+      </li>
+      <li class="paso">
+        <h3>Revisá la agenda del día</h3>
+        <p>La pantalla abre en el próximo día hábil con las citas de esa fecha y el resumen contado. Las flechas mueven el día saltando sábados y domingos.</p>
+      </li>
+      <li class="paso">
+        <h3>Resolvé las solicitudes pendientes</h3>
+        <p>En «Pendientes» están las que esperan respuesta. Confirmar deja la cita en firme; rechazar la cancela y devuelve ese horario a los pacientes.</p>
+      </li>
+      <li class="paso">
+        <h3>Atendé y registrá la visita</h3>
+        <p>Marcá la cita como atendida y se abre el expediente del paciente. Anotá diagnóstico, tratamientos, medicamentos, plan de tratamiento y notas. Si tocás «Guardar» dos veces, la visita se registra una sola.</p>
+      </li>
+      <li class="paso">
+        <h3>Consultá el historial cuando lo necesites</h3>
+        <p>En «Expedientes» buscá por nombre o número de identidad y abrí el historial completo de visitas, sin levantarte a buscar una carpeta.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ══ 7. CLIENTE ══ -->
+  <section id="cliente">
+    <p class="rotulo">El cliente</p>
+    <div class="lectura">
+      <h2>Clínica odontológica de la Dra. Belkis Suisse</h2>
+      <p>Una consulta odontológica pequeña, atendida por una sola profesional, con pacientes que vuelven cada varios meses y un volumen de citas que cabe en una jornada. Ese tamaño definió el producto tanto como los requisitos escritos.</p>
+      <p>Una consulta así no tiene personal de recepción dedicado a administrar un sistema, así que la aplicación no puede exigir configuración ni mantenimiento. Y sus pacientes no son usuarios frecuentes: alguien que entra dos veces al año no va a recordar una contraseña, y pedirle que cree una cuenta es levantar una barrera más alta que el trámite que viene a hacer.</p>
+      <p>De ahí salen las dos decisiones que más se notan al usar el producto: el paciente se identifica sólo con su número de identidad, y la doctora tiene un único lugar donde mirar —la agenda del día— en vez de un tablero que hay que aprender.</p>
+    </div>
+  </section>
+
+  <!-- ══ 8. AUTORA ══ -->
+  <section id="autor">
+    <p class="rotulo">La autora</p>
+    <div class="lectura">
+      <h2>Angie Hernández</h2>
+      <p>Estudiante de Ingeniería de Software. DentaAgenda es mi proyecto para la asignatura de Ingeniería de Software II: análisis del problema, diseño, base de datos, interfaz, pruebas, despliegue y documentación.</p>
+      <p>Lo que más me llevo del proyecto no es una tecnología, sino una forma de decidir dónde poner una garantía. La regla de que dos personas no pueden agendar el mismo horario podría haber vivido en el formulario, en el JavaScript o en la base; sólo en el último lugar sigue siendo cierta cuando dos solicitudes llegan al mismo tiempo. Ese razonamiento —preguntarse quién sostiene realmente una regla cuando el sistema está bajo presión— es el que ordenó el resto del diseño.</p>
+
+      <div class="sello">
+        <p>Código de verificación de autoría, publicado también en <a href="https://www.angiehernndz.lat/verificacion.txt">/verificacion.txt</a>, en el README del repositorio y en la etiqueta <code>&lt;meta name="verificacion"&gt;</code> de la landing y del login:</p>
+        <span class="codigo">LEARN-CAP-C72DC553</span>
+      </div>
+
+      <div class="acciones">
+        <a class="btn btn-lleno" href="https://www.angiehernndz.lat">Producto en vivo</a>
+        <a class="btn btn-linea" href="https://github.com/AngieH202/Proyecto_ISW2">Repositorio</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="envoltura">
+  DentaAgenda — Proyecto de Ingeniería de Software II ·
+  <a href="https://www.angiehernndz.lat">www.angiehernndz.lat</a> ·
+  <a href="https://github.com/AngieH202/Proyecto_ISW2">github.com/AngieH202/Proyecto_ISW2</a>
+</footer>
+
+</body>
+</html>
